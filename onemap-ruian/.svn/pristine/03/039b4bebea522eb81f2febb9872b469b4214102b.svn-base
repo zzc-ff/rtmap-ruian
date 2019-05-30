@@ -1,0 +1,88 @@
+package com.rtmap.devtest;
+
+import com.alibaba.fastjson.JSON;
+import com.rtmap.DynamicDataSourceTest;
+import com.rtmap.common.utils.R;
+import com.rtmap.modules.app.controller.AppMallAnalysisController;
+import com.rtmap.modules.app.entity.vo.MallVo;
+import com.rtmap.modules.app.utils.Constants;
+import com.rtmap.modules.sys.service.SysUserService;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class MallAnalysisTest {
+    Logger logger = LoggerFactory.getLogger(DynamicDataSourceTest.class);
+
+    @Autowired
+    SysUserService sysUserService;
+
+    @Autowired
+    AppMallAnalysisController appMallAnalysisController;
+
+    /**
+     * 概况
+     */
+    @Test
+    public void overview(){
+        MallVo mallVo = new MallVo();
+        mallVo.setMallId("地块-111");
+        mallVo.setDateType("D");
+        mallVo.setStartTime("20190101");
+        R r = appMallAnalysisController.overview(mallVo);
+        logger.info("r ==>> {}", JSON.toJSONString(r));
+    }
+
+    /**
+     * 趋势
+     */
+    @Test
+    public void trend(){
+        MallVo mallVo = new MallVo();
+        mallVo.setMallId("地块-111");
+        mallVo.setDateType("D");
+        mallVo.setStartTime("20180101");
+        mallVo.setEndTime("20200101");
+        logger.info("mallVo ==>> {}",mallVo);
+        R r = appMallAnalysisController.trend(Constants.SALEAMOUNT,mallVo);
+        logger.info("r ==>> {}",JSON.toJSONString(r));
+    }
+
+    /**
+     * 天气
+     */
+    @Test
+    public void weather(){
+        MallVo mallVo = new MallVo();
+        mallVo.setStartTime("20180101");
+        mallVo.setEndTime("20200101");
+        R r = appMallAnalysisController.weather(mallVo);
+        logger.info("r ==>> {}",JSON.toJSONString(r));
+    }
+
+    /**
+     * 本年排名
+     */
+    @Test
+    public void sort(){
+        MallVo mallVo = new MallVo();
+        mallVo.setGroupId("集团-1");
+        mallVo.setMarketId("项目-11");
+        mallVo.setDateType("Y");
+        mallVo.setStartTime("20190101");
+        logger.info("入参==>>{}",JSON.toJSONString(mallVo));
+        R r = appMallAnalysisController.sort(Constants.SALEAMOUNT, mallVo);
+        logger.info("出参==>>{}",JSON.toJSONString(r));
+    }
+
+    /**
+     *
+     */
+
+}

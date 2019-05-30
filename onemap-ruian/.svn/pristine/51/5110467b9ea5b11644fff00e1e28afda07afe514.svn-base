@@ -1,0 +1,25 @@
+package com.rtmap.modules.app.entity.vo;
+
+import lombok.Data;
+
+@Data
+public class MallVo {
+    /**
+     * 项目Id
+     */
+    private String marketId;
+    /**
+     * nowTime 当前时间 格式： yyyyMMdd / yyyyMM01 / yyyy0101
+     */
+    private String nowTime;
+    /**
+     * 时间偏移量   天偏移量  -1 往前推一天 1 往未来推一天       月偏移量  同理
+     */
+    private int offsetTime;
+    /**
+     * 时间类型   D-日期 、W-星期、M-月、Q-季 、Y-年
+     */
+    private String dateType;
+
+
+}

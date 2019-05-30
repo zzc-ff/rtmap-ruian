@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.rtmap.modules.sys.dao.SysUserDao">
+	<!-- 查询用户的所有权限 -->
+	<select id="queryAllPerms" resultType="string">
+		select m.perms from sys_user_role ur 
+			LEFT JOIN sys_role_menu rm on ur.role_id = rm.role_id 
+			LEFT JOIN sys_menu m on rm.menu_id = m.menu_id 
+		where ur.user_id = #{userId}
+	</select>
+	
+	<!-- 查询用户的所有菜单ID --> 
+	<select id="queryAllMenuId" resultType="long">
+		select distinct rm.menu_id from sys_user_role ur 
+			LEFT JOIN sys_role_menu rm on ur.role_id = rm.role_id 
+		where ur.user_id = #{userId}
+	</select>
+	
+	<select id="queryByUserName" resultType="com.rtmap.modules.sys.entity.SysUserEntity">
+		select * from sys_user where username = #{username}
+	</select>
+
+
+	<select id="selectUserList" resultType="com.rtmap.modules.sys.entity.SysUserEntity">
+		SELECT
+			u.user_id,
+			u.username ,
+			u.`password`,
+			u.salt,
+			u.email,
+			u.mobile,
+			u.`status`,
+			u.create_user_id,
+			u.create_time,
+			GROUP_CONCAT(m.market_name) marketName
+		FROM
+			sys_user u
+			LEFT JOIN ( SELECT sys_user_market.user_id, sys_user_market.market_id, dim_market.market_name FROM sys_user_market LEFT JOIN dim_market ON dim_market.market_id = sys_user_market.market_id ) m ON m.user_id = u.user_id
+			WHERE
+			1=1
+			<if test="userName != null">
+			and	u.username LIKE CONCAT("%",#{userName},"%")
+			</if>
+			<if test="createUserId != null">
+				AND u.create_user_id = #{createUserId}
+			</if>
+			GROUP BY u.user_id
+	</select>
+
+</mapper>

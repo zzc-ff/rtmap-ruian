@@ -1,0 +1,20 @@
+package com.rtmap.modules.app.service;
+
+import com.rtmap.modules.app.entity.*;
+import com.rtmap.modules.app.entity.vo.MallVo;
+
+import java.util.List;
+
+public interface MallService {
+    List<SaleAndTradeEntity> saleAndTrade(MallVo mallVo);
+
+    List<CarAndCustomerEntity> carAndCustomer(MallVo mallVo);
+
+    List<MallYearAchievedEntity> AllYearAchieved(MallVo mallVo);
+
+    List<MallLastMonthEntity> lastMonthSale(MallVo mallVo);
+
+    List<MallCustomerCarPriceEntity> customerAndCarAndPrice(MallVo mallVo);
+
+    List<MallMemberEntity> memberCountAndIncrease(MallVo mallVo);
+}

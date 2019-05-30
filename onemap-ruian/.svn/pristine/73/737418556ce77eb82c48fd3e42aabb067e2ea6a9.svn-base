@@ -1,0 +1,31 @@
+package com.rtmap.modules.app.entity;
+
+import lombok.Data;
+
+/**
+ * 统一请求参数传递接口
+ */
+@Data
+public class RequestEntity {
+    /**
+     * 时间类型
+     */
+    private String dateType;
+    /**
+     * 开始时间或者固定时间
+     */
+    private String startTime;
+    /**
+     * 结束时间
+     */
+    private String endTime;
+    /**
+     * group Id
+     */
+    private String groupId;
+    /**
+     * market Id
+     */
+    private String marketId;
+
+}

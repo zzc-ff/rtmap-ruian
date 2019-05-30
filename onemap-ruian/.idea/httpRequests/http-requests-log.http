@@ -1,0 +1,4 @@
+GET http://localhost:8082/onemap-ruian/{%20/market/getAllMallOfMarket}
+
+###
+

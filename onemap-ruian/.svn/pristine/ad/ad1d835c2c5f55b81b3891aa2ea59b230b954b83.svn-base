@@ -1,0 +1,335 @@
+
+
+package com.rtmap;
+
+import com.alibaba.fastjson.JSON;
+import com.rtmap.common.utils.PageUtils;
+import com.rtmap.common.utils.R;
+import com.rtmap.modules.app.controller.AppGroupController;
+import com.rtmap.modules.app.controller.AppMallController;
+import com.rtmap.modules.app.entity.MallYearAchievedEntity;
+import com.rtmap.modules.app.entity.MarketYearSaleEntity;
+import com.rtmap.modules.app.entity.vo.GroupVo;
+import com.rtmap.modules.app.entity.vo.MallVo;
+import com.rtmap.modules.app.service.GroupService;
+import com.rtmap.modules.sys.controller.AbstractController;
+import com.rtmap.modules.sys.entity.SysMarketEntity;
+import com.rtmap.modules.sys.entity.SysUserGroupEntity;
+import com.rtmap.modules.sys.entity.SysUserMarketEntity;
+import com.rtmap.modules.sys.service.SysUserMarketService;
+import com.rtmap.modules.sys.service.SysUserService;
+import com.rtmap.service.DynamicDataSourceTestService;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+
+import java.text.SimpleDateFormat;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 多数据源测试
+ *
+ *
+ */
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class DynamicDataSourceTest extends AbstractController {
+
+    Logger logger = LoggerFactory.getLogger(DynamicDataSourceTest.class);
+
+    @Autowired
+    private DynamicDataSourceTestService dynamicDataSourceTestService;
+
+    @Autowired
+    private SysUserMarketService sysUserMarketService;
+
+    @Autowired
+    SysUserService sysUserService;
+
+    @Autowired
+    GroupService groupService;
+
+    @Test
+    public void test(){
+        Long id = 1L;
+
+        dynamicDataSourceTestService.updateUser(id);
+        dynamicDataSourceTestService.updateUserBySlave1(id);
+        dynamicDataSourceTestService.updateUserBySlave2(id);
+    }
+
+    /**
+     * 获取所有的项目
+     */
+    @Test
+    public void getMarketListTest(){
+        List<SysMarketEntity > marketList = sysUserMarketService.getMarketList();
+
+        logger.info("marketList ==>> {}", R.ok().put("marketList",marketList));
+    }
+
+    /**
+     * 检验增加user与market关系
+     */
+/*    @Test
+    public void saveOrUpdateUserMarket(){
+        List<String> marketList = new ArrayList<>();
+        marketList.add("1");
+        marketList.add("2");
+        marketList.add("3");
+
+        sysUserMarketService.saveOrUpdate(1L,marketList);
+
+       logger.info("user与market关系插入成功！");
+    }*/
+
+    /**
+     * 分页查询用户列表
+     */
+    @Test
+    public void queryUserListByPage(){
+        Map<String,Object> params = new HashMap<>();
+//        params.put("username","admin");
+//        params.put("createUserId",1L);
+
+//        params.put("curPage","1");
+//        params.put("limit","1");
+        PageUtils pageUtils = sysUserService.queryPage(params);
+        logger.info("TotalPage ==>> {}",pageUtils.getTotalPage());
+        logger.info("TotalCount ==>> {}",pageUtils.getTotalCount());
+        logger.info("CurrPage ==>> {}", pageUtils.getCurrPage());
+        logger.info("PageSize ==>> {}",pageUtils.getPageSize());
+        logger.info("List ==>> {}",pageUtils.getList());
+
+
+
+    }
+
+    /**
+     * portal页查询用户是否有权限查看项目
+     */
+    @Test
+    public void queryUserMarket(){
+
+        List<SysUserMarketEntity> userMarketList = sysUserMarketService.getUserMarketList(1L);
+
+        List<SysUserGroupEntity> userGroupList = sysUserMarketService.getUserGroupList(3L);
+
+        logger.info("userMarketList ==>> {}",userMarketList);
+
+        logger.info("userGroupList ==>> {}",userGroupList);
+    }
+
+    /**
+     * 获取有权限的marketIdList
+     */
+    @Test
+    public void queryUserMarketIdList(){
+
+        List<String> list = sysUserMarketService.queryMarketIdList(1L);
+
+        logger.info("userMarketList ==>> {}",list);
+    }
+
+    @Autowired
+    AppGroupController appGroupController;
+    /**
+     * 13-集团驾驶舱-最近30天销售&交易
+     */
+    @Test
+    public void sellAndTrade(){
+        GroupVo groupVo = new GroupVo();
+        groupVo.setDateType("D");
+        groupVo.setGroupId("G_1");
+        groupVo.setNowTime("20190101");
+        groupVo.setOffsetTime(-30);
+        R r = appGroupController.saleAndTrade(groupVo);
+        logger.info("resultListJson ==>> {}",JSON.toJSONString(r));
+
+
+    }
+
+    /**
+     * 14-集团驾驶舱-最近30天车流&客流
+     */
+    @Test
+    public void carAndCustomer(){
+        GroupVo groupVo = new GroupVo();
+        groupVo.setDateType("D");
+        groupVo.setGroupId("G_1");
+        groupVo.setNowTime("20190215");
+        groupVo.setOffsetTime(-30);
+        R r = appGroupController.carAndCustomer(groupVo);
+        logger.info("resultListJson ==>> {}",JSON.toJSONString(r));
+    }
+
+    /**
+     * 15-集团驾驶舱-上月销售
+     */
+    @Test
+    public void lastMonthSale(){
+        GroupVo groupVo = new GroupVo();
+        groupVo.setDateType("M");
+        groupVo.setGroupId("G_1");
+        groupVo.setNowTime("20190301");
+        groupVo.setOffsetTime(-1);
+        R r = appGroupController.lastMonthSale(groupVo);
+        logger.info("resultListJson ==>> {}",JSON.toJSONString(r));
+    }
+
+    /**
+     * 16-集团驾驶舱-上月项目客流、车流、客单价
+     */
+    @Test
+    public void customerAndCarAndPrice(){
+        GroupVo groupVo = new GroupVo();
+        groupVo.setDateType("M");
+        groupVo.setGroupId("G_1");
+        groupVo.setNowTime("20190301");
+        groupVo.setOffsetTime(-1);
+        R r = appGroupController.customerAndCarAndPrice(groupVo);
+        logger.info("resultListJson ==>> {}",JSON.toJSONString(r));
+    }
+
+
+
+    /**
+     * 17-集团驾驶舱-项目年度销售额
+     */
+    @Test
+    public void AllYearSale(){
+        GroupVo groupVo = new GroupVo();
+        groupVo.setDateType("Y");
+        groupVo.setGroupId("G_1");
+        groupVo.setNowTime("20180101");
+        R r = appGroupController.AllYearSale(groupVo);
+        logger.info("resultListJson ==>> {}",JSON.toJSONString(r));
+    }
+
+    /**
+     * 18-集团驾驶舱-mall 年销售达成
+     */
+    @Test
+    public void AllYearAchieved(){
+        GroupVo groupVo = new GroupVo();
+        groupVo.setDateType("Y");
+        groupVo.setGroupId("G_1");
+        groupVo.setNowTime("20180101");
+        R r = appGroupController.AllYearAchieved(groupVo);
+        logger.info("resultListJson ==>> {}",JSON.toJSONString(r));
+    }
+
+    /**
+     * 19-集团驾驶舱-当前会员
+     */
+    @Test
+    public void memberCountAndIncrease(){
+        GroupVo groupVo = new GroupVo();
+        groupVo.setDateType("D");
+        groupVo.setGroupId("G_1");
+        groupVo.setNowTime("20190201");
+        R r = appGroupController.memberCountAndIncrease(groupVo);
+        logger.info("resultListJson ==>> {}",JSON.toJSONString(r));
+    }
+
+
+    @Autowired
+    AppMallController appMallController;
+
+
+    /**
+     * 20-项目驾驶舱-最近30天销售与交易
+     */
+    @Test
+    public void MallSaleAndTrade(){
+        MallVo mallVo = new MallVo();
+        mallVo.setDateType("D");
+        mallVo.setMarketId("P_11");
+        mallVo.setNowTime("20190201");
+        mallVo.setOffsetTime(-60);
+
+        R r = appMallController.saleAndTrade(mallVo);
+        logger.info("resultListJson ==>> {}",JSON.toJSONString(r));
+    }
+
+    /**
+     * 21-项目驾驶舱-最近30天车流与客流
+     */
+    @Test
+    public void MallCarAndCustomer(){
+        MallVo mallVo = new MallVo();
+        mallVo.setDateType("D");
+        mallVo.setMarketId("P_11");
+        mallVo.setNowTime("20190115");
+        mallVo.setOffsetTime(-30);
+
+        R r = appMallController.carAndCustomer(mallVo);
+        logger.info("resultListJson ==>> {}",JSON.toJSONString(r));
+    }
+
+    /**
+     * 22-项目驾驶舱-本年MALL、街区销售达成
+     */
+    @Test
+    public void MallAllYearAchieved(){
+        MallVo mallVo = new MallVo();
+        mallVo.setDateType("Y");
+        mallVo.setMarketId("P_11");
+        mallVo.setNowTime("20190101");
+
+        R r = appMallController.AllYearAchieved(mallVo);
+        logger.info("resultListJson ==>> {}",JSON.toJSONString(r));
+    }
+
+    /**
+     * 22-项目驾驶舱-上月mall销售
+     */
+    @Test
+    public void MallLastMonthSale(){
+        MallVo mallVo = new MallVo();
+        mallVo.setDateType("M");
+        mallVo.setMarketId("P_11");
+        mallVo.setNowTime("20190201");
+        mallVo.setOffsetTime(-1);
+
+        R r = appMallController.lastMonthSale(mallVo);
+        logger.info("resultListJson ==>> {}",JSON.toJSONString(r));
+    }
+
+    /**
+     * 23-项目驾驶舱-上月mall客流、车流、客单价
+     */
+    @Test
+    public void MallCustomerAndCarAndPrice(){
+        MallVo mallVo = new MallVo();
+        mallVo.setDateType("M");
+        mallVo.setMarketId("P_11");
+        mallVo.setNowTime("20190101");
+        mallVo.setOffsetTime(-1);
+
+        R r = appMallController.customerAndCarAndPrice(mallVo);
+        logger.info("resultListJson ==>> {}",JSON.toJSONString(r));
+    }
+
+    /**
+     * 24-项目驾驶舱-当前MALL、街区会员
+     */
+    @Test
+    public void MallMemberCountAndIncrease(){
+        MallVo mallVo = new MallVo();
+        mallVo.setDateType("D");
+        mallVo.setMarketId("P_11");
+        mallVo.setNowTime("20181201");
+        mallVo.setOffsetTime(-1);
+
+        R r = appMallController.memberCountAndIncrease(mallVo);
+        logger.info("resultListJson ==>> {}",JSON.toJSONString(r));
+    }
+
+}

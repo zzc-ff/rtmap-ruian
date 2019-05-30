@@ -1,0 +1,459 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.rtmap.modules.app.dao.MallDao">
+
+    <resultMap id="floorList" type="com.rtmap.modules.app.entity.FloorIndustryEntity" >
+        <id property="floorId" column="floor_id"/>
+        <result property="floorName" column="floor_name"/>
+        <collection property="list"  ofType="com.rtmap.modules.app.entity.IndustryEntity">
+            <id property="industryId" column="industry1"/>
+            <result property="industryName" column="industry1_name"/>
+            <result property="saleAmount" column="amt"/>
+        </collection>
+    </resultMap>
+
+    <resultMap id="industryList" type="com.rtmap.modules.app.entity.IndustryFloorEntity" >
+        <id property="industryId" column="industry1"/>
+        <result property="industryName" column="industry1_name"/>
+        <collection property="list"  ofType="com.rtmap.modules.app.entity.FloorEntity">
+            <id property="floorId" column="floor_id"/>
+            <result property="floorName" column="floor_name"/>
+            <result property="saleAmount" column="amt"/>
+        </collection>
+    </resultMap>
+
+    <select id="queryDataOfOverview" parameterType="com.rtmap.modules.app.entity.vo.MallVo" resultType="com.rtmap.modules.app.entity.OverviewEntity">
+        select pd.stat_date days,pd.stat_date_type dateType,pd.add_mem_num memberIncrease,gp.amt saleAmount,mpd.customer_num customerNum,tgp.in_car_num carNum from st_mem_property_dwmy pd
+        inner join st_sale_gmp gp  on  gp.property_no = pd.property_no and gp.stat_date_type = pd.stat_date_type and gp.stat_date = pd.stat_date
+        inner join st_customer_property_dwmy mpd on mpd.property_no = pd.property_no and mpd.stat_date_type = pd.stat_date_type and mpd.stat_date = pd.stat_date
+        inner join cf_traffic_trend_gpm tgp on tgp.property_no = pd.property_no and tgp.stat_date = pd.stat_date and tgp.stat_date_type = pd.stat_date_type
+        where pd.stat_date_type = #{dateType} and pd.stat_date = #{startTime} and pd.property_no = #{mallId}
+    </select>
+
+
+    <select id="queryNatureData" parameterType="com.rtmap.modules.app.entity.vo.MallVo" resultType="com.rtmap.modules.app.entity.OverviewEntity">
+        select SUM(pd.add_mem_num) memberIncrease,SUM(gp.amt) saleAmount,SUM(mpd.customer_num) customerNum, SUM(tgp.in_car_num) carNum
+        from st_mem_property_dwmy pd
+        inner join st_sale_gmp gp  on  gp.market_id = pd.market_id and gp.stat_date_type = pd.stat_date_type and gp.stat_date = pd.stat_date and pd.property_no = gp.property_no
+        inner join st_customer_property_dwmy mpd on mpd.market_id = pd.market_id and mpd.stat_date_type = pd.stat_date_type and mpd.stat_date = pd.stat_date and pd.property_no = mpd.property_no
+        inner join cf_traffic_trend_gpm tgp on tgp.market_id = pd.market_id and tgp.stat_date = pd.stat_date and tgp.stat_date_type = pd.stat_date_type and pd.property_no = tgp.property_no
+        where pd.stat_date_type = #{dateType} and pd.stat_date between #{startTime} and #{endTime} and pd.property_no = #{mallId}
+        group by pd.property_no
+    </select>
+
+
+    <select id="querySaleNatureData" parameterType="com.rtmap.modules.app.entity.vo.MallVo" resultType="com.rtmap.modules.app.entity.MallSaleEntity">
+        select gmp.amt saleAmount,gmp.amt_per_nfa saleEffect,gmp.bills tradeBills,gmp.amt_per_bill perCustomerPrice
+        from st_sale_gmp gmp
+        where gmp.stat_date_type = #{dateType}
+        and gmp.property_no = #{mallId}
+        and gmp.stat_date = #{startTime}
+        and gmp.market_id = #{marketId}
+        and gmp.group_id = #{groupId}
+    </select>
+
+
+    <select id="querySaleUncompleteMonth" parameterType="com.rtmap.modules.app.entity.vo.MallVo" resultType="com.rtmap.modules.app.entity.MallSaleEntity">
+       SELECT
+            SUM(gmp.amt) saleAmount,
+            SUM(gmp.amt_per_nfa) saleEffect,
+            SUM(gmp.bills) tradeBills,
+            SUM(gmp.amt_per_bill) perCustomerPrice
+        from st_sale_gmp gmp
+        where gmp.stat_date_type = #{dateType} and gmp.property_no = #{mallId} and gmp.stat_date between #{startTime} and #{endTime}
+        group by gmp.property_no
+    </select>
+
+
+    <select id="queryFloor" parameterType="com.rtmap.modules.app.entity.vo.MallVo" resultMap="floorList">
+        SELECT
+            sum(ps.amt) as amt,
+            ds.floor_id ,
+            ds.floor_name ,
+            ds.industry1 ,
+            ds.industry1_name
+        FROM
+            st_sale_gmps ps
+            LEFT JOIN dim_shop ds ON ds.shop_code = ps.shop_id
+        WHERE
+            ps.stat_date_type = #{dateType}
+            AND ps.group_id = #{groupId}
+            AND ps.market_id = #{marketId}
+            AND ps.property_no = #{mallId}
+            AND ps.stat_date BETWEEN #{startTime}
+            AND #{endTime}
+            group by ds.floor_id,ds.industry1
+    </select>
+
+    <select id="queryIndustry" parameterType="com.rtmap.modules.app.entity.vo.MallVo" resultMap="industryList">
+        SELECT
+            sum(ps.amt) as amt ,
+            ds.floor_id ,
+            ds.floor_name ,
+            ds.industry1 ,
+            ds.industry1_name
+        FROM
+            st_sale_gmps ps
+            LEFT JOIN dim_shop ds ON ds.shop_code = ps.shop_id
+        WHERE
+            ps.stat_date_type = #{dateType}
+            AND ps.group_id = #{groupId}
+            AND ps.market_id = #{marketId}
+            AND ps.property_no =  #{mallId}
+            AND ps.stat_date BETWEEN #{startTime}
+            AND  #{endTime}
+            group by ds.industry1,ds.floor_id
+    </select>
+
+    <select id="queryFloorNatureData" parameterType="com.rtmap.modules.app.entity.vo.MallVo" resultType="com.rtmap.modules.app.entity.MallSaleEntity">
+        SELECT
+            gmp.amt saleAmount,
+            gmp.amt_per_nfa saleEffect,
+            gmp.bills tradeBills,
+            gmp.amt_per_bill perCustomerPrice
+        FROM
+            st_sale_gmpf gmp
+        WHERE
+            gmp.stat_date_type =  #{dateType}
+            AND gmp.group_id = #{groupId}
+            AND gmp.market_id = #{marketId}
+            AND gmp.property_no = #{mallId}
+            AND gmp.stat_date = #{startTime}
+            AND gmp.floor_id =#{floorId}
+    </select>
+
+
+    <select id="queryFloorUncompleteMonth" parameterType="com.rtmap.modules.app.entity.vo.MallVo" resultType="com.rtmap.modules.app.entity.MallSaleEntity">
+        SELECT
+            SUM( gmp.amt ) saleAmount,
+            SUM( gmp.amt_per_nfa ) saleEffect,
+            SUM( gmp.bills ) tradeBills,
+            SUM( gmp.amt_per_bill ) perCustomerPrice
+        FROM
+            st_sale_gmpf gmp
+        WHERE
+            gmp.stat_date_type = #{dateType}
+             AND gmp.group_id = #{groupId}
+             AND gmp.market_id = #{marketId}
+            and gmp.property_no = #{mallId}
+            and gmp.floor_id = #{floorId}
+            and  gmp.stat_date between #{startTime} and #{endTime}
+        GROUP BY
+            gmp.floor_id
+    </select>
+
+    <select id="queryIndustryNatureData" parameterType="com.rtmap.modules.app.entity.vo.ParameterVo" resultType="com.rtmap.modules.app.entity.MallSaleEntity">
+        SELECT
+            gmp.amt saleAmount,
+            gmp.amt_per_nfa saleEffect,
+            gmp.bills tradeBills,
+            gmp.amt_per_bill perCustomerPrice
+        FROM
+            st_sale_gmpi1 gmp
+        WHERE
+            gmp.stat_date_type =  #{dateType}
+            AND gmp.group_id = #{groupId}
+             AND gmp.market_id = #{marketId}
+            AND gmp.property_no = #{mallId}
+            AND gmp.stat_date = #{startTime}
+            AND gmp.industry1 =#{industryId}
+    </select>
+
+
+    <select id="queryIndustryUncompleteMonth" parameterType="com.rtmap.modules.app.entity.vo.ParameterVo" resultType="com.rtmap.modules.app.entity.MallSaleEntity">
+          SELECT
+                SUM( gmp.amt ) saleAmount,
+                SUM( gmp.amt_per_nfa ) saleEffect,
+                SUM( gmp.bills ) tradeBills,
+                SUM( gmp.amt_per_bill ) perCustomerPrice
+            FROM
+                st_sale_gmpi1 gmp
+            WHERE
+                gmp.stat_date_type = #{dateType}
+                AND gmp.group_id = #{groupId}
+                 AND gmp.market_id = #{marketId}
+                and gmp.property_no = #{mallId}
+                and gmp.industry1 = #{industryId}
+                and  gmp.stat_date between #{startTime} and #{endTime}
+            GROUP BY
+                gmp.industry1
+    </select>
+
+
+    <select id="querySaleAmountRank" parameterType="com.rtmap.modules.app.entity.vo.ParameterVo" resultType="com.rtmap.modules.app.entity.ShopRankEntity">
+            SELECT
+                ps.shop_id shopId,
+                shop.shop_name shopName,
+                ps.pos_gmp_za_amt sort,
+                ps.amt resultData
+            FROM
+                st_sale_gmps ps
+                LEFT JOIN dim_shop shop ON shop.shop_code = ps.shop_id
+            WHERE
+                 ps.stat_date_type = #{param.dateType}
+                AND ps.stat_date = #{param.startTime}
+                AND ps.group_id = #{param.groupId}
+                AND ps.market_id = #{param.marketId}
+                AND ps.property_no = #{param.mallId}
+            ORDER BY
+                sort
+    </select>
+
+
+    <select id="querySaleEffectRank" parameterType="com.rtmap.modules.app.entity.vo.ParameterVo" resultType="com.rtmap.modules.app.entity.ShopRankEntity">
+            SELECT
+                ps.shop_id shopId,
+                shop.shop_name shopName,
+                ps.pos_gmp_za_amt_per_nfa sort,
+                ps.amt_per_nfa resultData
+            FROM
+                st_sale_gmps ps
+                LEFT JOIN dim_shop shop ON shop.shop_code = ps.shop_id
+            WHERE
+                 ps.stat_date_type = #{param.dateType}
+                AND ps.stat_date = #{param.startTime}
+                AND ps.group_id = #{param.groupId}
+                AND ps.market_id = #{param.marketId}
+                AND ps.property_no = #{param.mallId}
+            ORDER BY
+                sort
+    </select>
+
+    <select id="queryPerCustomerPriceRank" parameterType="com.rtmap.modules.app.entity.vo.ParameterVo" resultType="com.rtmap.modules.app.entity.ShopRankEntity">
+            SELECT
+                ps.shop_id shopId,
+                shop.shop_name shopName,
+                ps.pos_gmp_za_amt_per_bill sort,
+                ps.amt_per_bill resultData
+            FROM
+                st_sale_gmps ps
+                LEFT JOIN dim_shop shop ON shop.shop_code = ps.shop_id
+            WHERE
+                 ps.stat_date_type = #{param.dateType}
+                AND ps.stat_date = #{param.startTime}
+                AND ps.group_id = #{param.groupId}
+                AND ps.market_id = #{param.marketId}
+                AND ps.property_no = #{param.mallId}
+            ORDER BY
+               sort
+    </select>
+
+    <select id="queryTradeBillsRank" parameterType="com.rtmap.modules.app.entity.vo.ParameterVo" resultType="com.rtmap.modules.app.entity.ShopRankEntity">
+            SELECT
+                ps.shop_id shopId,
+                shop.shop_name shopName,
+                ps.pos_gmp_za_bills sort,
+                ps.bills resultData
+            FROM
+                st_sale_gmps ps
+                LEFT JOIN dim_shop shop ON shop.shop_code = ps.shop_id
+            WHERE
+                 ps.stat_date_type = #{param.dateType}
+                AND ps.stat_date = #{param.startTime}
+                AND ps.group_id = #{param.groupId}
+                AND ps.market_id = #{param.marketId}
+                AND ps.property_no = #{param.mallId}
+            ORDER BY
+               sort
+    </select>
+
+    <select id="queryShopUncompleteMonth" parameterType="com.rtmap.modules.app.entity.vo.ParameterVo" resultType="com.rtmap.modules.app.entity.MallSaleEntity">
+       SELECT
+            SUM( gmp.amt ) saleAmount,
+            SUM( gmp.amt_per_nfa ) saleEffect,
+            SUM( gmp.bills ) tradeBills,
+            SUM( gmp.amt_per_bill ) perCustomerPrice
+        FROM
+            st_sale_gmps gmp
+        WHERE
+            gmp.stat_date_type = #{dateType}
+            and gmp.group_id = #{groupId}
+            and gmp.market_id = #{marketId}
+            AND gmp.property_no = #{mallId}
+            AND gmp.shop_id = #{shopId}
+            AND gmp.stat_date BETWEEN #{startTime}
+            AND #{endTime}
+        GROUP BY
+            gmp.shop_id
+    </select>
+
+    <select id="queryShopNatureData" parameterType="com.rtmap.modules.app.entity.vo.ParameterVo" resultType="com.rtmap.modules.app.entity.MallSaleEntity">
+       SELECT
+            gmp.amt saleAmount,
+            gmp.amt_per_nfa saleEffect,
+            gmp.bills tradeBills,
+            gmp.amt_per_bill perCustomerPrice
+        FROM
+            st_sale_gmps gmp
+        WHERE
+            gmp.stat_date_type = #{dateType}
+            and gmp.group_id = #{groupId}
+            and gmp.market_id = #{marketId}
+            AND gmp.property_no = #{mallId}
+            AND gmp.stat_date = #{startTime}
+            AND gmp.shop_id = #{shopId}
+    </select>
+
+
+    <select id="bostonShopList" parameterType="com.rtmap.modules.app.entity.vo.ParameterVo" resultType="com.rtmap.modules.app.entity.ShopEntity">
+         SELECT
+            ps.shop_id shopId,
+            shop.shop_name shopName,
+            ps.amt saleAmount,
+            ps.amt_per_nfa saleEffect,
+            ps.pos_gmp_za_amt saleSort,
+            pos_gmpf_za_amt floorSort,
+            pos_gmpi1_za_amt industrySort,
+            ps.shops_gpm mallShopNum,
+            ps.shops_gpmf floorShopNum,
+            ps.shops_gpmi industryShopNum
+        FROM
+            st_sale_gmps ps
+            left join dim_shop shop on shop.shop_code = ps.shop_id
+        WHERE
+            ps.group_id = #{groupId}
+            AND ps.market_id = #{marketId}
+            AND ps.property_no =  #{mallId}
+            AND ps.stat_date_type = #{dateType}
+            AND ps.stat_date = #{startTime}
+            <if test="floorId != null">
+              and shop.floor_id = #{floorId}
+            </if>
+            <if test="industryId != null">
+             and shop.industry1 = #{industryId}
+            </if>
+    </select>
+
+
+<!--/**
+    * 排序字段
+    * saleAmount
+    * saleEffect
+    * perCustomerPrice
+    * tradeBills
+    */-->
+    <select id="shopListWithSort" parameterType="com.rtmap.modules.app.entity.vo.ParameterVo" resultType="com.rtmap.modules.app.entity.ShopListEntity">
+        SELECT
+            ps.shop_id shopId,
+            shop.shop_name shopName,
+            shop.floor_id floorId,
+            shop.floor_name floorName,
+            shop.industry1 industryId,
+            shop.industry1_name industryName,
+            ps.amt saleAmount,
+            ps.amt_per_nfa saleEffect,
+            ps.amt_per_bill perCustomerPrice,
+            ps.bills  tradeBills
+        FROM
+            st_sale_gmps ps
+            LEFT JOIN dim_shop shop ON shop.shop_code = ps.shop_id
+        WHERE
+            ps.group_id = #{param.groupId}
+            AND ps.market_id = #{param.marketId}
+            AND ps.property_no = #{param.mallId}
+            AND ps.stat_date_type = #{param.dateType}
+            AND ps.stat_date = #{param.startTime}
+        <if test="param.word == 'saleAmount' and param.lift == 'asc'">
+            ORDER BY
+            ps.amt asc
+        </if>
+        <if test="param.word == 'saleAmount' and param.lift == 'desc'">
+        ORDER BY
+            ps.amt DESC
+        </if>
+
+        <if test="param.word == 'saleEffect' and param.lift == 'asc'">
+            ORDER BY
+            ps.amt_per_nfa asc
+        </if>
+
+        <if test="param.word == 'saleEffect' and param.lift == 'desc'">
+        ORDER BY
+            ps.amt_per_nfa DESC
+        </if>
+        <if test="param.word == 'perCustomerPrice' and param.lift == 'asc'">
+            ORDER BY
+            ps.amt_per_bill asc
+        </if>
+        <if test="param.word == 'perCustomerPrice' and param.lift == 'desc'">
+        ORDER BY
+            ps.amt_per_bill DESC
+        </if>
+        <if test="param.word == 'tradeBills' and param.lift == 'asc'">
+        ORDER BY
+            ps.bills ASC
+        </if>
+        <if test="param.word == 'tradeBills' and param.lift == 'desc'">
+            ORDER BY
+            ps.bills desc
+        </if>
+    </select>
+
+
+    <select id="getSaleAmount" parameterType="com.rtmap.modules.app.entity.vo.MallVo" resultType="com.rtmap.modules.app.entity.SortMarketEntity">
+        SELECT
+            gp.property_no mallId,
+            @r:=@r+1 as sort,
+            gp.amt  resultData
+        FROM
+            st_sale_gmp gp ,(select @r :=0) a
+        WHERE
+            gp.stat_date_type = #{dateType}
+            AND gp.stat_date = #{startTime}
+            AND gp.group_id = #{groupId}
+            AND gp.market_id = #{mallId}
+        ORDER BY
+            resultData
+    </select>
+
+    <select id="getCarNum" parameterType="com.rtmap.modules.app.entity.vo.MallVo" resultType="com.rtmap.modules.app.entity.SortMarketEntity">
+       SELECT
+            gp.property_no mallId,
+            @r:=@r+1 as sort,
+            gp.in_car_num  resultData
+        FROM
+            cf_traffic_trend_gpm gp ,(select @r :=0) a
+        WHERE
+            gp.stat_date_type = #{dateType}
+            AND gp.stat_date = #{startTime}
+            AND gp.group_id = #{groupId}
+            AND gp.market_id = #{mallId}
+        ORDER BY
+           resultData
+    </select>
+
+    <select id="getCustomberNum" parameterType="com.rtmap.modules.app.entity.vo.MallVo" resultType="com.rtmap.modules.app.entity.SortMarketEntity">
+        SELECT
+            gp.property_no mallId,
+            @r:=@r+1 as sort,
+            gp.customer_num  resultData
+        FROM
+            st_customer_property_dwmy gp ,(select @r :=0) a
+        WHERE
+            gp.stat_date_type = #{dateType}
+            AND gp.stat_date = #{startTime}
+            AND gp.group_id = #{groupId}
+            AND gp.market_id = #{mallId}
+        ORDER BY
+           resultData
+    </select>
+
+    <select id="getMemIncrease" parameterType="com.rtmap.modules.app.entity.vo.MallVo" resultType="com.rtmap.modules.app.entity.SortMarketEntity">
+       SELECT
+            gp.property_no mallId,
+            @r:=@r+1 as sort,
+            gp.add_mem_num  resultData
+        FROM
+            st_mem_property_dwmy gp ,(select @r :=0) a
+        WHERE
+            gp.stat_date_type = #{dateType}
+            AND gp.stat_date = #{startTime}
+            AND gp.group_id = #{groupId}
+            AND gp.market_id = #{mallId}
+        ORDER BY
+           resultData
+    </select>
+
+
+</mapper>

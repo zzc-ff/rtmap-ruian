@@ -1,0 +1,12 @@
+package com.rtmap.modules.app.utils;
+
+public class Constants {
+    /**
+     * 统一查询接口 返回成功的code
+     */
+    public static final String SUCCESSCODE = "000000";
+    /**
+     * 请求的ContentType类型
+     */
+    public static final String TYPEJSON = "application/json";
+}

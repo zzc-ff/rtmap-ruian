@@ -1,0 +1,32 @@
+package com.rtmap.modules.app.controller;
+
+import com.rtmap.common.utils.R;
+import com.rtmap.modules.app.entity.BusinessMapEntity;
+import com.rtmap.modules.app.entity.vo.MallVo;
+import com.rtmap.modules.app.service.MallBusinessMapService;
+import io.swagger.annotations.Api;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import javax.validation.Valid;
+import java.util.List;
+
+@RestController
+@Slf4j
+@RequestMapping("/mallBusinessMap")
+@Api("APP mall 商业地图")
+public class AppMallBusinessMapController {
+
+    @Autowired
+    MallBusinessMapService mallBusinessMapService;
+    /**
+     * 地图需要的楼层销售额，坪效数据
+     */
+    @RequestMapping("/saleData")
+    public R saleData(@Valid MallVo mallVo){
+        List<BusinessMapEntity> list = mallBusinessMapService.saleData(mallVo);
+        return R.ok().put("list",list);
+    }
+}

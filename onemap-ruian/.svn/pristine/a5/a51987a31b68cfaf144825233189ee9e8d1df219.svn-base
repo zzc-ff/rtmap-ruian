@@ -1,0 +1,238 @@
+package com.rtmap.modules.app.service.impl;
+
+import com.alibaba.fastjson.JSON;
+import com.rtmap.modules.app.dao.MallDao;
+import com.rtmap.modules.app.entity.*;
+import com.rtmap.modules.app.entity.vo.MallVo;
+import com.rtmap.modules.app.service.MallSaleAnalysisService;
+import com.rtmap.modules.app.utils.Constants;
+import com.rtmap.modules.app.utils.HttpUtil;
+import com.rtmap.modules.app.utils.OverviewRingSimilarUtils;
+import com.rtmap.modules.app.utils.TimeUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+@Slf4j
+public class MallSaleAnalysisServiceImpl implements MallSaleAnalysisService {
+
+
+    @Resource
+    MallDao mallDao;
+    @Autowired
+    TimeUtils timeUtils;
+    @Autowired
+    HttpUtil httpUtil;
+    @Value("${common.request.url}")
+    String urlHeader;
+    @Autowired 
+    OverviewRingSimilarUtils overview;
+
+    @Override
+    public MallSaleCompareEntity mallSaleAnalysis(MallVo mallVo) {
+        MallSaleCompareEntity mallSaleCompareEntity = new MallSaleCompareEntity();
+        if (Constants.D.equals(mallVo.getDateType())){
+            //计算昨日
+            String timeDate = timeUtils.getDay(mallVo.getStartTime(),-1);
+            mallVo.setStartTime(timeDate);
+
+            MallSaleEntity todayData = mallDao.querySaleNatureData(mallVo);
+
+            if (todayData == null){
+                return mallSaleCompareEntity;
+            }
+
+            overview.saleSaveData(mallSaleCompareEntity,todayData);
+
+            String yesterday = timeUtils.getDay(mallVo.getStartTime(), -1);
+            mallVo.setStartTime(yesterday);
+            MallSaleEntity yesterdayData = mallDao.querySaleNatureData(mallVo);
+
+            if (yesterdayData == null){
+                return mallSaleCompareEntity;
+            }
+            overview.saleRing(mallSaleCompareEntity,todayData,yesterdayData);
+            return mallSaleCompareEntity;
+        }
+
+        //非完整月  DM
+        if (Constants.DM.equals(mallVo.getDateType())){
+
+            if (timeUtils.isFistDay(mallVo.getStartTime())){
+                //第一天
+                mallVo.setDateType(Constants.M);
+                //接下来按自然月计算
+            }else {
+                //非第一天，按天统计
+                String currentTime = mallVo.getStartTime();
+                mallVo.setDateType(Constants.D);
+                mallVo.setStartTime(timeUtils.getfirstDayOfMonth(currentTime));
+                mallVo.setEndTime(currentTime); // 本月第一天 - 本月当天
+                MallSaleEntity monthData = mallDao.querySaleUncompleteMonth(mallVo);
+
+                if (monthData == null){
+                    return mallSaleCompareEntity;
+                }
+                overview.saleSaveData(mallSaleCompareEntity,monthData);
+
+
+                String lastMonth = timeUtils.getLastMonth(currentTime, -1);
+                mallVo.setStartTime(timeUtils.getfirstDayOfMonth(lastMonth));// 上月第一天  上月当天
+                mallVo.setEndTime(lastMonth);
+                MallSaleEntity lastMonthData = mallDao.querySaleUncompleteMonth(mallVo);
+
+                if (lastMonthData == null){
+                    return mallSaleCompareEntity;
+                }
+                //环比
+                overview.saleRing(mallSaleCompareEntity,monthData,lastMonthData);
+
+                String monthOfLastYear = timeUtils.getLastYear(currentTime,-1);
+                mallVo.setStartTime(timeUtils.getfirstDayOfMonth(monthOfLastYear));
+                mallVo.setEndTime(monthOfLastYear);
+                MallSaleEntity monthOfLastYearData = mallDao.querySaleUncompleteMonth(mallVo);
+
+                if (monthOfLastYearData == null){
+                    return mallSaleCompareEntity;
+                }
+                // 同比
+                overview.saleSimilar(mallSaleCompareEntity,monthData,monthOfLastYearData);
+                return mallSaleCompareEntity;
+            }
+        }
+
+        //自然月 M  环比同比
+        if (Constants.M.equals(mallVo.getDateType())){
+            mallVo.setStartTime(timeUtils.getLastMonth(mallVo.getStartTime(),-1));
+            MallSaleEntity monthData = mallDao.querySaleNatureData(mallVo);
+
+            if (monthData == null){
+                return mallSaleCompareEntity;
+            }
+            overview.saleSaveData(mallSaleCompareEntity,monthData);
+
+            String lastMonth = timeUtils.getLastMonth(mallVo.getStartTime(), -1);
+            mallVo.setStartTime(lastMonth);
+            MallSaleEntity lastMonthData = mallDao.querySaleNatureData(mallVo);
+
+            if (lastMonthData == null){
+                return mallSaleCompareEntity;
+            }
+            //环比
+            overview.saleRing(mallSaleCompareEntity,monthData,lastMonthData);
+
+            String monthOfLastYear = timeUtils.getMonthOfLastYear(mallVo.getStartTime());
+            mallVo.setStartTime(monthOfLastYear);
+            MallSaleEntity monthOfLastYearData = mallDao.querySaleNatureData(mallVo);
+
+            if (monthOfLastYearData == null){
+                return mallSaleCompareEntity;
+            }
+            // 同比
+            overview.saleSimilar(mallSaleCompareEntity,monthData,monthOfLastYearData);
+            return mallSaleCompareEntity;
+        }
+        //年 Y   同比
+        if (Constants.Y.equals(mallVo.getDateType())){
+            MallSaleEntity yearData = mallDao.querySaleNatureData(mallVo);
+
+            if (yearData == null){
+                return mallSaleCompareEntity;
+            }
+            overview.saleSaveData(mallSaleCompareEntity,yearData);
+            String lastYear = timeUtils.getLastYear(mallVo.getStartTime(),-1);
+            mallVo.setStartTime(lastYear);
+            MallSaleEntity lastYearData = mallDao.querySaleNatureData(mallVo);
+
+            if (lastYearData == null){
+                return mallSaleCompareEntity;
+            }
+            // 同比
+            overview.saleSimilar(mallSaleCompareEntity,yearData,lastYearData);
+
+            return mallSaleCompareEntity;
+        }
+
+        return mallSaleCompareEntity;
+    }
+
+
+
+    /**
+     * mall-销售分析-趋势图
+     *
+     * 60 销售额  saleAmount
+     *61  日均销售坪效  saleEffect
+     * 62 客单价  perCustomerPrice
+     *63  交易笔数 tradeBills
+     * 64 会员消费额   memSaleAmount
+     *65  会员交易笔数 memTradeBills
+     *66 会员客单价   memPerPrice
+     */
+    @Override
+    public List<TrendEntity> mallSaleTrend(String dataType, MallVo mallVo) {
+        RequestEntity requestEntity = new RequestEntity();
+        requestEntity.setGroupId(mallVo.getGroupId());
+        requestEntity.setMarketId(mallVo.getMarketId());
+        requestEntity.setMallId(mallVo.getMallId());
+        requestEntity.setDateType(mallVo.getDateType());
+        requestEntity.setStartTime(mallVo.getStartTime());
+        requestEntity.setEndTime(mallVo.getEndTime());
+
+        log.info("requestEntity ==>> {}", JSON.toJSONString(requestEntity));
+
+        if (Constants.SALEAMOUNT.equals(dataType)){
+            String URL = urlHeader+"60";
+            log.info("URL ==>> {}",URL);
+            return httpUtil.httpUtil(URL, requestEntity,TrendEntity.class);
+        }
+        if (Constants.SALEEFFECT.equals(dataType)){
+            String URL = urlHeader+"61";
+            log.info("URL ==>> {}",URL);
+            return httpUtil.httpUtil(URL, requestEntity,TrendEntity.class);
+        }
+        if (Constants.PERCUSTOMERPRICE.equals(dataType)){
+            String URL = urlHeader+"62";
+            log.info("URL ==>> {}",URL);
+            return httpUtil.httpUtil(URL, requestEntity,TrendEntity.class);
+        }
+        if (Constants.TRADEBILLS.equals(dataType)){
+            String URL = urlHeader+"63";
+            log.info("URL ==>> {}",URL);
+            return httpUtil.httpUtil(URL, requestEntity,TrendEntity.class);
+        }
+        if (Constants.MEMSALEAMOUNT.equals(dataType)){
+            String URL = urlHeader+"64";
+            return httpUtil.httpUtil(URL, requestEntity,TrendEntity.class);
+        }
+        if (Constants.MEMTRADEBILLS.equals(dataType)){
+            String URL = urlHeader+"65";
+            log.info("URL ==>> {}",URL);
+            return httpUtil.httpUtil(URL, requestEntity,TrendEntity.class);
+        }
+        if (Constants.MEMPERPRICE.equals(dataType)){
+            String URL = urlHeader+"66";
+            log.info("URL ==>> {}",URL);
+            return httpUtil.httpUtil(URL, requestEntity,TrendEntity.class);
+        }
+
+        return new ArrayList<>();
+
+    }
+
+    @Override
+    public List<FloorIndustryEntity> queryFloor(MallVo mallVo) {
+        return mallDao.queryFloor(mallVo);
+    }
+
+    @Override
+    public List<IndustryFloorEntity> queryIndustry(MallVo mallVo) {
+        return mallDao.queryIndustry(mallVo);
+    }
+}

@@ -1,0 +1,85 @@
+package com.rtmap.modules.app.controller;
+
+import com.alibaba.fastjson.JSON;
+import com.rtmap.common.utils.R;
+import com.rtmap.modules.app.entity.*;
+import com.rtmap.modules.app.entity.vo.MallVo;
+import com.rtmap.modules.app.entity.vo.MarketVo;
+import com.rtmap.modules.app.service.MallAnalysisService;
+import io.swagger.annotations.Api;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import javax.validation.Valid;
+import java.util.List;
+
+/**
+ * APP mall 综合分析
+ *
+ */
+@RestController
+@Slf4j
+@RequestMapping("/mallAnalysis")
+@Api("APP mall 综合分析")
+public class AppMallAnalysisController {
+
+   @Autowired
+    MallAnalysisService mallAnalysisService;
+
+    /**
+     * 概况 计算 同比环比
+     *
+     * 查询时间类型
+     * 天 D
+     * 自然月 M
+     * 年   Y
+     * 非完整月  DM
+     */
+    @RequestMapping("/overview")
+    public R overview(@Valid  MallVo mallVo){
+        log.info("marketVo ==>> {}", JSON.toJSONString(mallVo));
+        OverviewCompareEntity overviewCompareEntity = mallAnalysisService.mallAnalysis(mallVo);
+        return R.ok().put("list", overviewCompareEntity);
+    }
+
+    /**
+     * 项目综合分析-趋势图
+     * 销售额  saleAmount
+     * 客流量   customerNum
+     * 交易笔数 tradeAmount
+     * 车流量   carNum
+     * 会员消费额   memSaleAmount
+     * 会员交易笔数 memTradeBills
+     * 会员客单价   memPerPrice
+     *
+     */
+    @RequestMapping("/trend/{dataType}")
+    public R trend(@PathVariable("dataType")String dataType,@Valid MallVo mallVo){
+        List<TrendEntity> list = mallAnalysisService.mallTrend(dataType,mallVo);
+        return R.ok().put("list",list);
+    }
+
+    /**
+     * 本年排名
+     *  saleAmount
+     *  customerNum
+     *  carNum
+     *  memIncrease
+     */
+    @RequestMapping("/sort/{dataType}")
+    public R sort(@PathVariable("dataType") String dataType,@Valid MallVo mallVo){
+        SortEntity sortEntity = mallAnalysisService.sort(dataType,mallVo);
+        return R.ok().put("list",sortEntity);
+    }
+
+
+
+
+
+
+
+}

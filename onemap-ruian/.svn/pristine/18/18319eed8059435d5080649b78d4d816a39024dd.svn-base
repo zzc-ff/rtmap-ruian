@@ -1,0 +1,23 @@
+package com.rtmap.modules.app.entity;
+
+import lombok.Data;
+
+@Data
+public class MarketRealEntity {
+    /**
+     * 项目Id
+     */
+    private String marketId;
+    /**
+     * 项目名称
+     */
+    private String marketName;
+    /**
+     * 销售额
+     */
+    private long saleAmount;
+    /**
+     * 交易笔数
+     */
+    private long tradeBills;
+}

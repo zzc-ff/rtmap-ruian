@@ -1,0 +1,89 @@
+package com.rtmap.modules.app.controller;
+
+import com.alibaba.fastjson.JSON;
+import com.rtmap.common.utils.PageUtils;
+import com.rtmap.common.utils.R;
+import com.rtmap.modules.app.entity.*;
+import com.rtmap.modules.app.entity.vo.MallVo;
+import com.rtmap.modules.app.entity.vo.ParameterVo;
+import com.rtmap.modules.app.service.MallShopAnalysisService;
+import com.rtmap.modules.app.utils.Constants;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController
+@Slf4j
+@RequestMapping("/mallShopAnalysis")
+public class AppMallShopAnalysisController {
+
+    @Autowired
+    MallShopAnalysisService mallShopAnalysisService;
+
+    /**
+     * 波士顿图-所有的店铺数据
+     */
+    @GetMapping("/bostonShopList")
+    public R bostonShopList(ParameterVo parameterVo){
+        return mallShopAnalysisService.bostonShopList(parameterVo);
+    }
+
+
+
+    /**
+     * 店铺分析-单店铺-同比环比
+     *
+     * 默认取销售额最大的店铺 ？？？？？
+     */
+    @GetMapping("/shopCompare")
+    public R shopCompare(ParameterVo parameterVo){
+        MallSaleCompareEntity mallSaleCompareEntity = mallShopAnalysisService.shopCompare(parameterVo);
+        return R.ok().put("list",mallSaleCompareEntity);
+    }
+
+
+    /**
+     * 店铺分析-时间段内指标数据和
+     * 销售额
+     * 日均销售坪效
+     * 交易笔数
+     * 客单价
+     */
+    @GetMapping("/shopData")
+    public R shopData(ParameterVo parameterVo){
+        MallSaleEntity list = mallShopAnalysisService.shopData(parameterVo);
+        return R.ok().put("list",list);
+    }
+
+    /**
+     * 楼层分析-单楼层-时间段内每天的数据
+     *     * 销售额  saleAmount
+     *      * 日均销售坪效  saleEffect
+     *      * 客单价  perCustomerPrice
+     *      * 交易笔数 tradeBills
+     */
+    @GetMapping("/trend/{dataType}")
+    public R trend(@PathVariable("dataType") String dataType, ParameterVo parameterVo){
+        log.info("mallVo ==>> {}", JSON.toJSONString(parameterVo));
+        List<TrendEntity> list = mallShopAnalysisService.trend(dataType,parameterVo);
+        return R.ok().put("list", list);
+    }
+
+
+    /**
+     * 店铺排名表 分页
+     */
+    @GetMapping("/shopListWithSort")
+    public R shopListWithSort(ParameterVo parameterVo){
+        PageUtils pageUtils = mallShopAnalysisService.shopListWithSort(parameterVo);
+        return R.ok().put("list",pageUtils);
+    }
+
+
+
+}

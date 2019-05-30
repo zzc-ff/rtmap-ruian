@@ -1,0 +1,169 @@
+package com.rtmap.modules.app.service.impl;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.TypeReference;
+import com.rtmap.modules.app.entity.*;
+import com.rtmap.modules.app.entity.vo.GroupVo;
+import com.rtmap.modules.app.service.GroupService;
+import com.rtmap.modules.app.utils.HttpUtil;
+import com.rtmap.modules.app.utils.TimeUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+@Slf4j
+public class GroupServiceImpl implements GroupService {
+
+    @Autowired
+    TimeUtils timeUtils;
+    @Value("${common.request.url}")
+    String urlHeader;
+    @Autowired
+    HttpUtil httpUtil;
+
+    @Override
+    public List<SaleAndTradeEntity> saleAndTrade(GroupVo groupVo) {
+
+        String startTime = timeUtils.getDay(groupVo.getStartTime(),groupVo.getOffsetTime());
+
+        RequestEntity requestEntity = new RequestEntity();
+        requestEntity.setDateType(groupVo.getDateType());
+        requestEntity.setStartTime(startTime);
+        requestEntity.setEndTime(groupVo.getStartTime());
+        requestEntity.setGroupId(groupVo.getGroupId());
+
+        log.info("requestJson ==>> {}",JSON.toJSONString(requestEntity));
+
+        String URL = urlHeader + "13";
+        log.info("URL ==>> {}",URL);
+
+        return httpUtil.httpUtilPlus(URL, requestEntity);
+    }
+
+    @Override
+    public List<CarAndCustomerEntity> carAndCustomer(GroupVo groupVo)   {
+        String startTime = timeUtils.getDay(groupVo.getStartTime(),groupVo.getOffsetTime());
+
+        RequestEntity requestEntity = new RequestEntity();
+        requestEntity.setDateType(groupVo.getDateType());
+        requestEntity.setStartTime(startTime);
+        requestEntity.setEndTime(groupVo.getStartTime());
+        requestEntity.setGroupId(groupVo.getGroupId());
+        log.info("requestJson ==>> {}",JSON.toJSONString(requestEntity));
+
+        //获取车流数据
+        String carURL = urlHeader + "14";
+        log.info("URL ==>> {}",carURL);
+
+        return httpUtil.httpUtilPlus(carURL, requestEntity);
+    }
+
+    @Override
+    public List<MarketLastMonthEntity> lastMonthSale(GroupVo groupVo)  {
+
+        String lastMonth = timeUtils.getLastMonth(groupVo.getStartTime(),groupVo.getOffsetTime());
+
+        //获取消费额、销售坪效、会员消费额
+        RequestEntity requestEntity = new RequestEntity();
+        requestEntity.setDateType("M");
+        requestEntity.setStartTime(lastMonth);
+        requestEntity.setGroupId(groupVo.getGroupId());
+
+        log.info("requestJson ==>> {}",JSON.toJSONString(requestEntity));
+
+        String URL = urlHeader + "15";
+        log.info("URL ==>> {}",URL);
+
+        return httpUtil.httpUtilPlus(URL, requestEntity);
+    }
+
+
+    @Override
+    public List<MarketCustomerCarPriceEntity> customerAndCarAndPrice(GroupVo groupVo)  {
+        String lastMonth = timeUtils.getLastMonth(groupVo.getStartTime(),groupVo.getOffsetTime());
+
+        RequestEntity requestEntity = new RequestEntity();
+        requestEntity.setDateType(groupVo.getDateType());
+        requestEntity.setStartTime(lastMonth);
+        requestEntity.setGroupId(groupVo.getGroupId());
+
+        log.info("requestJson ==>> {}",JSON.toJSONString(requestEntity));
+        //获取项目车流
+        String URL = urlHeader + "16";
+        log.info("URL ==>> {}",URL);
+        JSONArray resultJsonList = httpUtil.httpUtil(URL, requestEntity);
+
+        List<MarketCustomerCarPriceEntity> list = new ArrayList<>();
+
+        if (resultJsonList == null){
+            return list;
+        }
+
+         list = JSON.parseObject(resultJsonList.toJSONString(), new TypeReference<ArrayList<MarketCustomerCarPriceEntity>>() {});
+
+
+        return list;
+    }
+
+    @Override
+    public List<MarketYearSaleEntity> AllYearSale(GroupVo groupVo) {
+
+        RequestEntity requestEntity = new RequestEntity();
+        requestEntity.setDateType("Y");
+        requestEntity.setGroupId(groupVo.getGroupId());
+        requestEntity.setStartTime(groupVo.getStartTime());
+
+        log.info("requestJson ==>> {}",JSON.toJSONString(requestEntity));
+
+        String URL = urlHeader + "17";
+        log.info("URL ==>> {}",URL);
+
+        return  httpUtil.httpUtilPlus(URL, requestEntity);
+    }
+
+    @Override
+    public List<MallYearAchievedEntity> AllYearAchieved(GroupVo groupVo) {
+
+        RequestEntity requestEntity = new RequestEntity();
+        requestEntity.setDateType(groupVo.getDateType());
+        requestEntity.setStartTime(groupVo.getStartTime());
+        requestEntity.setGroupId(groupVo.getGroupId());
+
+        log.info("requestJson ==>> {}",JSON.toJSONString(requestEntity));
+
+        String URL = urlHeader + "18";
+        log.info("URL ==>> {}",URL);
+
+        return httpUtil.httpUtilPlus(URL, requestEntity);
+
+    }
+
+    @Override
+    public List<MarketMemberEntity> memberCountAndIncrease(GroupVo groupVo) {
+        RequestEntity requestEntity = new RequestEntity();
+        requestEntity.setDateType(groupVo.getDateType());
+        requestEntity.setStartTime(groupVo.getStartTime());
+        requestEntity.setGroupId(groupVo.getGroupId());
+
+        log.info("requestJson ==>> {}",JSON.toJSONString(requestEntity));
+
+        String URL = urlHeader + "19";
+        log.info("URL ==>> {}",URL);
+
+        return httpUtil.httpUtilPlus(URL, requestEntity);
+
+    }
+
+    @Override
+    public GroupRealTimeEntity lastYearData(GroupVo groupVo) {
+        //去年今天
+        String time = timeUtils.getToday();
+        return null;
+    }
+}

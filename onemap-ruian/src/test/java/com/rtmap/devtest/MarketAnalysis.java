@@ -1,0 +1,132 @@
+package com.rtmap.devtest;
+
+import com.alibaba.fastjson.JSON;
+import com.rtmap.DynamicDataSourceTest;
+import com.rtmap.common.utils.R;
+import com.rtmap.modules.app.controller.AppMarketAnalysisController;
+import com.rtmap.modules.app.controller.AppMarketController;
+import com.rtmap.modules.app.entity.vo.MallVo;
+import com.rtmap.modules.app.entity.vo.MarketVo;
+import com.rtmap.modules.app.service.GroupService;
+import com.rtmap.modules.app.utils.Constants;
+import com.rtmap.modules.sys.service.SysUserService;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class MarketAnalysis {
+
+    Logger logger = LoggerFactory.getLogger(DynamicDataSourceTest.class);
+
+    @Autowired
+    SysUserService sysUserService;
+
+    @Autowired
+    GroupService groupService;
+
+    @Autowired
+    AppMarketAnalysisController appMarketAnalysisController;
+
+    /**
+     * 概况
+     *      * 查询时间类型
+     *      * 天 D
+     *      * 自然月 M
+     *      * 年   Y
+     *      * 非完整月  DM
+     *
+     */
+    @Test
+    public void overview(){
+        MarketVo marketVo = new MarketVo();
+        marketVo.setMarketId("项目-11");
+        marketVo.setDateType("D");
+        marketVo.setStartTime("20190101");
+        R r = appMarketAnalysisController.overview(marketVo);
+        logger.info("r ==>> {}",JSON.toJSONString(r));
+    }
+
+    /**
+     * 趋势
+     */
+    @Test
+    public void trend(){
+        MarketVo marketVo = new MarketVo();
+        marketVo.setMarketId("项目-11");
+        marketVo.setDateType("D");
+        marketVo.setStartTime("20180101");
+        marketVo.setEndTime("20200101");
+        R r = appMarketAnalysisController.trend(Constants.SALEAMOUNT,marketVo);
+        logger.info("r ==>> {}",JSON.toJSONString(r));
+    }
+
+
+    /**
+     * 占比
+     */
+    @Test
+    public void proportionAnalysis(){
+        MarketVo marketVo = new MarketVo();
+        marketVo.setMarketId("项目-11");
+        marketVo.setDateType("D");
+        marketVo.setStartTime("20190101");
+        marketVo.setEndTime("20190103");
+        R r = appMarketAnalysisController.proportionAnalysis(marketVo);
+        logger.info("r ==>> {}",JSON.toJSONString(r));
+    }
+    /**
+     * 本年排名
+     */
+    @Test
+    public void sort(){
+        MallVo mallVo = new MallVo();
+        mallVo.setGroupId("集团-1");
+        mallVo.setMarketId("项目-11");
+        System.out.println("---");
+        mallVo.setDateType("Y");
+        mallVo.setStartTime("20190101");
+
+        logger.info("入参==>>{}",JSON.toJSONString(mallVo));
+        R r = appMarketAnalysisController.sort(Constants.SALEAMOUNT, mallVo);
+        logger.info("出参==>>{}",JSON.toJSONString(r));
+    }
+
+    /**
+     * 业态分析
+     */
+    @Test
+    public void industryAnalysis(){
+        MarketVo marketVo = new MarketVo();
+        marketVo.setGroupId("集团-1");
+        marketVo.setMarketId("项目-11");
+        marketVo.setDateType("Y");
+        marketVo.setStartTime("20190101");
+        logger.info("入参==>>{}",JSON.toJSONString(marketVo));
+        R r = appMarketAnalysisController.industryAnalysis(marketVo);
+        logger.info("出参==>>{}",JSON.toJSONString(r));
+    }
+
+    /**
+     * 天气
+     */
+    @Test
+    public void weather(){
+        MarketVo marketVo = new MarketVo();
+        marketVo.setGroupId("253");
+        marketVo.setMarketId("299");
+        marketVo.setStartTime("20190101");
+        marketVo.setEndTime("20190425");
+        R r = appMarketAnalysisController.weather(marketVo);
+        logger.info("入参==>>{}",JSON.toJSONString(marketVo));
+        logger.info("出参==>>{}",JSON.toJSONString(r));
+    }
+
+
+
+}

@@ -1,0 +1,108 @@
+package com.rtmap.modules.app.utils;
+
+
+import com.rtmap.modules.app.entity.MallSaleCompareEntity;
+import com.rtmap.modules.app.entity.MallSaleEntity;
+import com.rtmap.modules.app.entity.OverviewCompareEntity;
+import com.rtmap.modules.app.entity.OverviewEntity;
+import org.springframework.stereotype.Component;
+
+@Component
+public class OverviewRingSimilarUtils {
+
+    public void saveData(OverviewCompareEntity overviewCompareEntity,OverviewEntity overviewEntity){
+        overviewCompareEntity.setSaleAmount(overviewEntity.getSaleAmount());
+        overviewCompareEntity.setCustomerNum(overviewEntity.getCustomerNum());
+        overviewCompareEntity.setCarNum(overviewEntity.getCarNum());
+        overviewCompareEntity.setMemberIncrease(overviewEntity.getMemberIncrease());
+    }
+
+    public void ring(OverviewCompareEntity overviewCompareEntity,OverviewEntity initData,OverviewEntity ringData){
+        //環比
+        if (ringData.getSaleAmount() != 0){
+            double saleRing = (initData.getSaleAmount()  - ringData.getSaleAmount()) * 1.0 / ringData.getSaleAmount();
+            overviewCompareEntity.setSaleRing(saleRing);
+        }
+        if (ringData.getCarNum() !=0){
+            double carRing = (initData.getCarNum()  - ringData.getCarNum()) * 1.0 / ringData.getCarNum();
+            overviewCompareEntity.setCarRing(carRing);
+        }
+        if (ringData.getCustomerNum() != 0){
+            double customerRing = (initData.getCustomerNum() - ringData.getCustomerNum()) * 1.0 / ringData.getCustomerNum();
+            overviewCompareEntity.setCustomerRing(customerRing);
+        }
+        if (ringData.getMemberIncrease() != 0){
+            double memberRing = (initData.getMemberIncrease() - ringData.getMemberIncrease()) * 1.0 / ringData.getMemberIncrease();
+            overviewCompareEntity.setMemberRing(memberRing);
+        }
+    }
+
+    public void similar(OverviewCompareEntity overviewCompareEntity,OverviewEntity initData,OverviewEntity ringData){
+        //同比
+        if (ringData.getSaleAmount() != 0){
+            double saleRing = (initData.getSaleAmount() - ringData.getSaleAmount() ) * 1.0 / ringData.getSaleAmount();
+            overviewCompareEntity.setSaleSimilar(saleRing);
+        }
+        if (ringData.getCarNum() !=0){
+            double carRing = (initData.getCarNum() - ringData.getCarNum() ) * 1.0 / ringData.getCarNum();
+            overviewCompareEntity.setCarSimilar(carRing);
+        }
+        if (ringData.getCustomerNum() != 0){
+            double customerRing = (  initData.getCustomerNum()- ringData.getCustomerNum()) * 1.0 / ringData.getCustomerNum();
+            overviewCompareEntity.setCustomerSimilar(customerRing);
+        }
+        if (ringData.getMemberIncrease() != 0){
+            double memberRing = (initData.getMemberIncrease() - ringData.getMemberIncrease() ) * 1.0 / ringData.getMemberIncrease();
+            overviewCompareEntity.setMemberSimilar(memberRing);
+        }
+    }
+
+    // mall 销售分析
+    public void saleSaveData(MallSaleCompareEntity mallSaleCompareEntity, MallSaleEntity mallSaleEntity){
+        mallSaleCompareEntity.setSaleAmount(mallSaleEntity.getSaleAmount());
+        mallSaleCompareEntity.setTradeBills(mallSaleEntity.getTradeBills());
+        mallSaleCompareEntity.setPerCustomerPrice(mallSaleEntity.getPerCustomerPrice());
+        mallSaleCompareEntity.setSaleEffect(mallSaleEntity.getSaleEffect());
+    }
+
+    public void saleRing(MallSaleCompareEntity mallSaleCompareEntity,MallSaleEntity initData,MallSaleEntity ringData){
+        //環比
+        if (ringData.getSaleAmount() != 0){
+            double saleRing = (initData.getSaleAmount()  - ringData.getSaleAmount()) * 1.0 / ringData.getSaleAmount();
+            mallSaleCompareEntity.setSaleRing(saleRing);
+        }
+        if (ringData.getPerCustomerPrice() !=0){
+            double carRing = (initData.getPerCustomerPrice()  - ringData.getPerCustomerPrice()) * 1.0 / ringData.getPerCustomerPrice();
+            mallSaleCompareEntity.setPerCustomerPriceRing(carRing);
+        }
+        if (ringData.getSaleEffect() != 0){
+            double customerRing = (initData.getSaleEffect() - ringData.getSaleEffect()) * 1.0 / ringData.getSaleEffect();
+            mallSaleCompareEntity.setSaleEffectRing(customerRing);
+        }
+        if (ringData.getTradeBills() != 0){
+            double memberRing = (initData.getTradeBills() - ringData.getTradeBills()) * 1.0 / ringData.getTradeBills();
+            mallSaleCompareEntity.setTradeBillsRing(memberRing);
+        }
+    }
+
+    public void saleSimilar(MallSaleCompareEntity mallSaleCompareEntity,MallSaleEntity initData,MallSaleEntity ringData){
+        //同比
+        if (ringData.getSaleAmount() != 0){
+            double saleRing = (initData.getSaleAmount() - ringData.getSaleAmount() ) * 1.0 / ringData.getSaleAmount();
+            mallSaleCompareEntity.setSaleSimilar(saleRing);
+        }
+        if (ringData.getPerCustomerPrice() !=0){
+            double carRing = (initData.getPerCustomerPrice() - ringData.getPerCustomerPrice() ) * 1.0 / ringData.getPerCustomerPrice();
+            mallSaleCompareEntity.setPerCustomerPriceSimilar(carRing);
+        }
+        if (ringData.getSaleEffect() != 0){
+            double customerRing = (  initData.getSaleEffect()- ringData.getSaleEffect()) * 1.0 / ringData.getSaleEffect();
+            mallSaleCompareEntity.setSaleEffectSimilar(customerRing);
+        }
+        if (ringData.getTradeBills() != 0){
+            double memberRing = (initData.getTradeBills() - ringData.getTradeBills() ) * 1.0 / ringData.getTradeBills();
+            mallSaleCompareEntity.setTradeBillsSimilar(memberRing);
+        }
+    }
+
+}

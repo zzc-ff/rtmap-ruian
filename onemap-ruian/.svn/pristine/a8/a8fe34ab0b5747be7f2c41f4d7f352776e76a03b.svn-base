@@ -1,0 +1,19 @@
+package com.rtmap.modules.app.dao;
+
+import com.rtmap.modules.app.entity.CarAndCustomerEntity;
+import com.rtmap.modules.app.entity.MarketLastMonthEntity;
+import com.rtmap.modules.app.entity.SaleAndTradeEntity;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.Date;
+import java.util.List;
+
+@Mapper
+public interface GroupDao {
+    List<SaleAndTradeEntity> querySellData(@Param("startTime") String startTime, @Param("endTime") String endTime);
+
+    List<CarAndCustomerEntity> queryCarNum(@Param("startTime") String startTime, @Param("endTime") String endTime);
+
+    List<MarketLastMonthEntity> querySaleAndEffect(String lastMonth);
+}

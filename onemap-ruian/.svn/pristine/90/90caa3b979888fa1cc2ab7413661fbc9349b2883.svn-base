@@ -1,0 +1,229 @@
+package com.rtmap.modules.app.controller;
+
+import com.alibaba.fastjson.JSON;
+import com.rtmap.common.utils.R;
+import com.rtmap.modules.app.entity.*;
+import com.rtmap.modules.app.entity.vo.GroupVo;
+import com.rtmap.modules.app.service.GroupService;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * APP集团项目驾驶舱
+ *
+ *
+ */
+@RestController
+@Slf4j
+@RequestMapping("/group")
+@Api("APP集团项目驾驶舱接口")
+public class AppGroupController {
+
+    @Autowired
+    GroupService groupService;
+
+    /**
+     * 今日快报
+     */
+    @GetMapping("/todayNews")
+    @ApiOperation("集团今日快报")
+    public R todayNews(GroupVo groupVo){
+        //参数： groupId
+        log.info("入参 ==>> {}",JSON.toJSONString(groupVo));
+       //集团数据指标
+        //销售额、交易笔数、客流量、车流量、交易会员数、会员消费额占比
+        RealTimeEntity realTimeEntity = new RealTimeEntity();
+        realTimeEntity.setSaleAmount(1222222344);
+        realTimeEntity.setTradBills(1322142374);
+        realTimeEntity.setCustomerNum(1141347623);
+        realTimeEntity.setCarNum(2142435232);
+        realTimeEntity.setMemberNum(1823442412);
+//        realTimeEntity.setMemSaleRatio(0.99);
+
+        //项目指标
+        //每个项目的销售额
+        List<MarketRealSaleEntity> list = new ArrayList<>();
+
+        MarketRealSaleEntity m1 = new MarketRealSaleEntity();
+        m1.setMarketId("1");
+        m1.setMarketName("太平桥项目");
+        m1.setSaleAmount(3132274);
+        list.add(m1);
+
+        MarketRealSaleEntity m2 = new MarketRealSaleEntity();
+        m2.setMarketId("2");
+        m2.setMarketName("瑞虹项目");
+        m2.setSaleAmount(3123274);
+        list.add(m2);
+
+        MarketRealSaleEntity m3 = new MarketRealSaleEntity();
+        m3.setMarketId("3");
+        m3.setMarketName("虹桥项目");
+        m3.setSaleAmount(3123274);
+        list.add(m3);
+
+        MarketRealSaleEntity m4 = new MarketRealSaleEntity();
+        m4.setMarketId("4");
+        m4.setMarketName("杨浦项目");
+        m4.setSaleAmount(3123274);
+        list.add(m4);
+
+        MarketRealSaleEntity m5 = new MarketRealSaleEntity();
+        m5.setMarketId("5");
+        m5.setMarketName("重庆项目");
+        m5.setSaleAmount(3123274);
+        list.add(m5);
+
+        MarketRealSaleEntity m6 = new MarketRealSaleEntity();
+        m6.setMarketId("6");
+        m6.setMarketName("佛山项目");
+        m6.setSaleAmount(3123274);
+        list.add(m6);
+
+        MarketRealSaleEntity m7 = new MarketRealSaleEntity();
+        m7.setMarketId("7");
+        m7.setMarketName("广州项目");
+        m7.setSaleAmount(3122374);
+        list.add(m7);
+
+        return R.ok().put("groupData", realTimeEntity).put("marketList",list);
+    }
+
+
+
+    /**
+     * 获取集团年度快报
+     * 集团年度销售额、年度客流人次、车流、 会员人数
+     * 同比、         同比、        同比、消费额占比
+     * 集团达成率
+     */
+    @GetMapping("/market/groupYearNews")
+    public R groupYearNews(GroupVo groupVo){
+        //参数：当前时间， 集团id
+        RealTimeEntity groupRealTimeData = groupService.lastYearData(groupVo);
+        return R.ok().put("groupRealTimeData",groupRealTimeData);
+    }
+
+
+    /**
+     * 每个项目的实时销售额和
+     */
+    @GetMapping("/marketRealData")
+    public R marketRealData(){
+        List<MarketRealEntity> list = new ArrayList<>();
+        MarketRealEntity m = new MarketRealEntity();
+        m.setMarketId("1");
+        m.setMarketName("和平里项目");
+        m.setSaleAmount(12638721);
+        m.setTradeBills(37821);
+        list.add(m);
+        return R.ok().put("list",list);
+    }
+
+
+
+
+    /**
+     * 最近30天销售与交易
+     */
+    @GetMapping("/saleAndTrade")
+    @ApiOperation("集团最近30天销售与交易数据")
+    public R saleAndTrade(GroupVo groupVo){
+        log.info("groupVoJson ==>> {}", JSON.toJSONString(groupVo));
+        List<SaleAndTradeEntity> list = groupService.saleAndTrade(groupVo);
+        return R.ok().put("list",list);
+    }
+
+    /**
+     * 最近30天车流与客流
+     */
+    @GetMapping("/carAndCustomer")
+    @ApiOperation("集团最近30天车流与客流数据")
+    public R carAndCustomer(GroupVo groupVo){
+        log.info("groupVoJson ==>> {}", JSON.toJSONString(groupVo));
+        List<CarAndCustomerEntity> list = groupService.carAndCustomer(groupVo);
+        return R.ok().put("list",list);
+
+    }
+
+    /**
+     * 上月项目销售
+     */
+    @GetMapping("/market/lastMonthSale")
+    @ApiOperation("上月项目销售")
+    public R lastMonthSale(GroupVo groupVo){
+        log.info("groupVoJson ==>> {}", JSON.toJSONString(groupVo));
+        List<MarketLastMonthEntity> list = groupService.lastMonthSale(groupVo);
+        return R.ok().put("list",list);
+
+    }
+
+    /**
+     * 上月项目客流、车流、客单价
+     */
+    @GetMapping("/market/customerAndCarAndPrice")
+    @ApiOperation("上月项目客流、车流、客单价")
+    public R customerAndCarAndPrice(GroupVo groupVo){
+        log.info("groupVoJson ==>> {}", JSON.toJSONString(groupVo));
+        List<MarketCustomerCarPriceEntity> list =  groupService.customerAndCarAndPrice(groupVo);
+        return R.ok().put("list",list);
+    }
+
+    /**
+     * 当前项目会员
+     */
+    @GetMapping("/market/memberCountAndIncrease")
+    @ApiOperation("当前项目会员与新增会员")
+    public R memberCountAndIncrease(GroupVo groupVo){
+        log.info("groupVoJson ==>> {}", JSON.toJSONString(groupVo));
+        List<MarketMemberEntity> list = groupService.memberCountAndIncrease(groupVo);
+        return R.ok().put("list",list);
+    }
+
+    /**
+     * 项目年度销售额
+     */
+    @GetMapping("/market/allYearSale")
+    @ApiOperation("项目年度销售额")
+    public R AllYearSale(GroupVo groupVo){
+        log.info("groupVoJson ==>> {}", JSON.toJSONString(groupVo));
+        List<MarketYearSaleEntity> list =  groupService.AllYearSale(groupVo);
+        return R.ok().put("list",list);
+
+    }
+
+    /**
+     * MALL、街区年度销售达成
+     *
+     * 直接走统一查询的大接口
+     */
+    @GetMapping("/market/allYearAchieved")
+    @ApiOperation("MALL、街区年度销售达成")
+    public R AllYearAchieved(GroupVo groupVo){
+        log.info("groupVoJson ==>> {}", JSON.toJSONString(groupVo));
+        List<MallYearAchievedEntity> list =  groupService.AllYearAchieved(groupVo);
+        return R.ok().put("list",list);
+    }
+
+    /**
+     * 获取项目列表以及项目底下mall数量
+     */
+    @GetMapping("/market/propertyList")
+    @ApiOperation("获取项目列表以及项目底下mall数量")
+    public R propertyList(){
+        return R.ok();
+    }
+
+
+
+
+
+}

@@ -1,0 +1,35 @@
+package com.rtmap.modules.app.service;
+
+import com.rtmap.common.utils.R;
+import com.rtmap.modules.app.entity.*;
+import com.rtmap.modules.app.entity.vo.MallVo;
+import com.rtmap.modules.app.entity.vo.MarketVo;
+
+import java.util.List;
+
+public interface MarketService {
+    List<SaleAndTradeEntity> saleAndTrade(MarketVo marketVo);
+
+    List<CarAndCustomerEntity> carAndCustomer(MarketVo marketVo);
+
+    List<MallYearAchievedEntity> AllYearAchieved(MarketVo marketVo);
+
+    List<MallLastMonthEntity> lastMonthSale(MarketVo marketVo);
+
+    List<MallCustomerCarPriceEntity> customerAndCarAndPrice(MarketVo marketVo);
+
+    List<MallMemberEntity> memberCountAndIncrease(MarketVo marketVo);
+
+    List<MallEntity> queryAllMallOfMarket(MarketVo marketVo);
+
+
+    R saleEffect(MallVo mallVo);
+
+    List<FocusShopEntity> yesterdayMallSale(MarketVo marketVo);
+
+    RealTimeEntity lastYearData(MarketVo marketVo);
+
+    String queryMarketPlanSale(MarketVo marketVo);
+
+    List<MarketRealSaleAmountEntity> realTimeSaleAmount(MallVo mallVo);
+}

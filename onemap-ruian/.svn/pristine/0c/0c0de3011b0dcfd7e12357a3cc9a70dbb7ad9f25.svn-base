@@ -1,0 +1,56 @@
+package com.rtmap.modules.sys.service.impl;
+
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.rtmap.common.utils.MapUtils;
+import com.rtmap.modules.sys.dao.SysUserMarketDao;
+import com.rtmap.modules.sys.entity.SysMarketEntity;
+import com.rtmap.modules.sys.entity.SysUserGroupEntity;
+import com.rtmap.modules.sys.entity.SysUserMarketEntity;
+import com.rtmap.modules.sys.service.SysUserMarketService;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service("sysUserMarketService")
+public class SysUserMarketServiceImpl extends ServiceImpl<SysUserMarketDao, SysUserMarketEntity> implements SysUserMarketService {
+
+    @Override
+    public void saveOrUpdate(Long userId, List<String> marketIdList) {
+        //先删除用户与market关系
+        this.removeByMap(new MapUtils().put("user_id", userId));
+
+        if(marketIdList == null || marketIdList.size() == 0){
+            return ;
+        }
+
+        //保存用户与角色关系
+        for(String marketId : marketIdList){
+            SysUserMarketEntity sysUserMarketEntity = new SysUserMarketEntity();
+            sysUserMarketEntity.setMarketId(marketId);
+            sysUserMarketEntity.setUserId(userId);
+
+            this.save(sysUserMarketEntity);
+        }
+
+    }
+
+    @Override
+    public List<SysMarketEntity> getMarketList() {
+        return baseMapper.getMarketList();
+    }
+
+    @Override
+    public List<SysUserMarketEntity> getUserMarketList(Long userId) {
+        return baseMapper.getUserMarketList(userId);
+    }
+
+    @Override
+    public List<String> queryMarketIdList(Long userId) {
+        return baseMapper.queryMarketIdList(userId);
+    }
+
+    @Override
+    public List<SysUserGroupEntity> getUserGroupList(Long userId) {
+        return baseMapper.getUserGroupList(userId);
+    }
+}

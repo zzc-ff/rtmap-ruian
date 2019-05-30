@@ -1,0 +1,128 @@
+package com.rtmap.devtest;
+
+import com.alibaba.fastjson.JSON;
+import com.rtmap.DynamicDataSourceTest;
+import com.rtmap.common.utils.R;
+import com.rtmap.modules.app.controller.AppMarketController;
+import com.rtmap.modules.app.entity.vo.MarketVo;
+import com.rtmap.modules.app.service.GroupService;
+import com.rtmap.modules.sys.service.SysUserMarketService;
+import com.rtmap.modules.sys.service.SysUserService;
+import com.rtmap.service.DynamicDataSourceTestService;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class MarketTest {
+
+
+    Logger logger = LoggerFactory.getLogger(DynamicDataSourceTest.class);
+
+    @Autowired
+    SysUserService sysUserService;
+
+    @Autowired
+    GroupService groupService;
+
+    @Autowired
+    AppMarketController appMarketController;
+
+
+    /**
+     * 20-项目驾驶舱-最近30天销售与交易
+     */
+    @Test
+    public void MarketSaleAndTrade(){
+        MarketVo marketVo = new MarketVo();
+        marketVo.setDateType("D");
+        marketVo.setMarketId("P_11");
+        marketVo.setStartTime("20190201");
+        marketVo.setOffsetTime(-60);
+
+        R r = appMarketController.saleAndTrade(marketVo);
+        logger.info("resultListJson ==>> {}", JSON.toJSONString(r));
+    }
+
+    /**
+     * 21-项目驾驶舱-最近30天车流与客流
+     */
+    @Test
+    public void MarketCarAndCustomer(){
+        MarketVo marketVo = new MarketVo();
+        marketVo.setDateType("D");
+        marketVo.setMarketId("P_11");
+        marketVo.setStartTime("20190115");
+        marketVo.setOffsetTime(-30);
+
+        R r = appMarketController.carAndCustomer(marketVo);
+        logger.info("resultListJson ==>> {}",JSON.toJSONString(r));
+    }
+
+    /**
+     * 22-项目驾驶舱-本年MALL、街区销售达成
+     */
+    @Test
+    public void MarketAllYearAchieved(){
+        MarketVo marketVo = new MarketVo();
+        marketVo.setDateType("Y");
+        marketVo.setMarketId("P_11");
+        marketVo.setStartTime("20190101");
+
+        R r = appMarketController.AllYearAchieved(marketVo);
+        logger.info("resultListJson ==>> {}",JSON.toJSONString(r));
+    }
+
+    /**
+     * 23-项目驾驶舱-上月mall销售
+     */
+    @Test
+    public void MarketLastMonthSale(){
+        MarketVo marketVo = new MarketVo();
+        marketVo.setDateType("M");
+        marketVo.setMarketId("P_11");
+        marketVo.setStartTime("20190201");
+        marketVo.setOffsetTime(-1);
+
+        R r = appMarketController.lastMonthSale(marketVo);
+        logger.info("resultListJson ==>> {}",JSON.toJSONString(r));
+    }
+
+    /**
+     * 24-项目驾驶舱-上月mall客流、车流、客单价
+     */
+    @Test
+    public void MarketCustomerAndCarAndPrice(){
+        MarketVo marketVo = new MarketVo();
+        marketVo.setDateType("M");
+        marketVo.setMarketId("P_11");
+        marketVo.setStartTime("20190101");
+        marketVo.setOffsetTime(-1);
+
+        R r = appMarketController.customerAndCarAndPrice(marketVo);
+        logger.info("resultListJson ==>> {}",JSON.toJSONString(r));
+    }
+
+    /**
+     * 25-项目驾驶舱-当前MALL、街区会员
+     */
+    @Test
+    public void MarketMemberCountAndIncrease(){
+        MarketVo marketVo = new MarketVo();
+        marketVo.setDateType("D");
+        marketVo.setMarketId("P_11");
+        marketVo.setStartTime("20181201");
+        marketVo.setOffsetTime(-1);
+
+        R r = appMarketController.memberCountAndIncrease(marketVo);
+        logger.info("resultListJson ==>> {}",JSON.toJSONString(r));
+    }
+
+
+
+}

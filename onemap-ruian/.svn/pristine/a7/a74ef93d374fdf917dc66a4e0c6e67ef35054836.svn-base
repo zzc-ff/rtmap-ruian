@@ -1,0 +1,23 @@
+package com.rtmap.modules.app.service;
+
+import com.baomidou.mybatisplus.extension.service.IService;
+import com.rtmap.common.utils.PageUtils;
+import com.rtmap.common.utils.R;
+import com.rtmap.modules.app.entity.*;
+import com.rtmap.modules.app.entity.vo.ParameterVo;
+
+import java.util.List;
+
+public interface MallShopAnalysisService extends IService<ShopRankEntity> {
+    PageUtils rankingList(String dataType, ParameterVo parameterVo);
+
+    MallSaleCompareEntity shopCompare(ParameterVo parameterVo);
+
+    List<TrendEntity> trend(String dataType, ParameterVo parameterVo);
+
+    R bostonShopList(ParameterVo parameterVo);
+
+    MallSaleEntity shopData(ParameterVo parameterVo);
+
+    List<ShopListEntity> shopListWithSort(ParameterVo parameterVo);
+}

@@ -1,0 +1,396 @@
+package com.rtmap.modules.app.service.impl;
+
+import com.alibaba.fastjson.JSON;
+import com.rtmap.modules.app.dao.MarketDao;
+import com.rtmap.modules.app.entity.*;
+import com.rtmap.modules.app.entity.vo.MallVo;
+import com.rtmap.modules.app.entity.vo.MarketVo;
+import com.rtmap.modules.app.service.MarketAnalysisService;
+import com.rtmap.modules.app.utils.Constants;
+import com.rtmap.modules.app.utils.HttpUtil;
+import com.rtmap.modules.app.utils.OverviewRingSimilarUtils;
+import com.rtmap.modules.app.utils.TimeUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Service
+@Slf4j
+public class MarketAnalysisImpl implements MarketAnalysisService {
+
+    @Autowired
+    TimeUtils timeUtils;
+    @Autowired
+    HttpUtil httpUtil;
+    @Value("${common.request.url}")
+    String urlHeader;
+    @Resource
+    MarketDao marketDao;
+    @Autowired
+    OverviewRingSimilarUtils overview;
+
+    /**
+     * 概况 计算 同比环比
+     *
+     * 查询时间类型
+     * 天 D
+     * 自然月 M
+     * 年   Y
+     * 非完整月  DM
+     * @param marketVo
+     * @return
+     */
+    @Override
+    public OverviewCompareEntity MarketAnalysis(MarketVo marketVo) {
+        OverviewCompareEntity overviewCompareEntity = new OverviewCompareEntity();
+
+        //天数据 环比（天没有同比，年没有环比）
+        if (Constants.D.equals(marketVo.getDateType())){
+
+            //时间重置为昨日
+            String timeDate = timeUtils.getDay(marketVo.getStartTime(),-1);
+            marketVo.setStartTime(timeDate);
+
+            OverviewEntity todayData = marketDao.queryNatureData(marketVo);
+
+            if (todayData == null){
+                return overviewCompareEntity;
+            }
+
+            overview.saveData(overviewCompareEntity,todayData);
+
+            String yesterday = timeUtils.getDay(marketVo.getStartTime(), -1);
+            marketVo.setStartTime(yesterday);
+            OverviewEntity yesterdayData = marketDao.queryNatureData(marketVo);
+
+            if (yesterdayData == null){
+                return overviewCompareEntity;
+            }
+
+            overview.ring(overviewCompareEntity,todayData,yesterdayData);
+
+            return overviewCompareEntity;
+         }
+
+        //上月、本月，数据库统计数据为 本月统计到昨日  本年统计到昨日
+        if (Constants.DM.equals(marketVo.getDateType())){
+
+            if (timeUtils.isFistDay(marketVo.getStartTime())){
+                //第一天
+                marketVo.setDateType(Constants.M);
+                //接下来按自然月计算
+            }else {
+                //非第一天，按天统计
+                String currentTime = marketVo.getStartTime();
+                marketVo.setDateType(Constants.D);
+                marketVo.setStartTime(timeUtils.getfirstDayOfMonth(currentTime));
+                marketVo.setEndTime(currentTime); // 本月第一天 - 本月当天
+                OverviewEntity monthData = marketDao.queryUncompleteMonth(marketVo);
+
+                if (monthData == null){
+                    return overviewCompareEntity;
+                }
+                overview.saveData(overviewCompareEntity,monthData);
+
+                String lastMonth = timeUtils.getLastMonth(currentTime, -1);
+                marketVo.setStartTime(timeUtils.getfirstDayOfMonth(lastMonth));// 上月第一天  上月当天
+                marketVo.setEndTime(lastMonth);
+                OverviewEntity lastMonthData = marketDao.queryUncompleteMonth(marketVo);
+
+                if (lastMonthData == null){
+                    return overviewCompareEntity;
+                }
+
+                //环比
+                overview.ring(overviewCompareEntity,monthData,lastMonthData);
+
+                String monthOfLastYear = timeUtils.getLastYear(currentTime,-1);
+                marketVo.setStartTime(timeUtils.getfirstDayOfMonth(monthOfLastYear));
+                marketVo.setEndTime(monthOfLastYear);
+                OverviewEntity monthOfLastYearData = marketDao.queryUncompleteMonth(marketVo);
+
+                if (monthOfLastYearData == null){
+                    return overviewCompareEntity;
+                }
+
+                // 同比
+                overview.similar(overviewCompareEntity,monthData,monthOfLastYearData);
+
+                return overviewCompareEntity;
+            }
+        }
+
+        //自然月 M  环比同比
+        if (Constants.M.equals(marketVo.getDateType())){
+            marketVo.setStartTime(timeUtils.getLastMonthWithFirstDay(marketVo.getStartTime(),-1));
+            OverviewEntity monthData = marketDao.queryNatureData(marketVo);
+
+            if (monthData == null){
+                return overviewCompareEntity;
+            }
+            overview.saveData(overviewCompareEntity,monthData);
+
+            String lastMonth = timeUtils.getLastMonthWithFirstDay(marketVo.getStartTime(), -1);
+            marketVo.setStartTime(lastMonth);
+            OverviewEntity lastMonthData = marketDao.queryNatureData(marketVo);
+
+            if (lastMonthData == null){
+                return overviewCompareEntity;
+            }
+            //环比
+            overview.ring(overviewCompareEntity,monthData,lastMonthData);
+
+            String monthOfLastYear = timeUtils.getMonthOfLastYear(marketVo.getStartTime());
+            marketVo.setStartTime(monthOfLastYear);
+            OverviewEntity monthOfLastYearData = marketDao.queryNatureData(marketVo);
+
+            if (monthOfLastYearData == null){
+                return overviewCompareEntity;
+            }
+
+            // 同比
+           overview.similar(overviewCompareEntity,monthData,monthOfLastYearData);
+
+            return overviewCompareEntity;
+        }
+
+        //年 Y   同比
+        if (Constants.Y.equals(marketVo.getDateType())){
+            OverviewEntity yearData = marketDao.queryNatureData(marketVo);
+
+            if (yearData == null){
+                return overviewCompareEntity;
+            }
+           overview.saveData(overviewCompareEntity,yearData);
+
+            String lastYear = timeUtils.getLastYear(marketVo.getStartTime(),-1);
+            marketVo.setStartTime(lastYear);
+            OverviewEntity lastYearData = marketDao.queryNatureData(marketVo);
+
+            if (lastYearData == null){
+                return overviewCompareEntity;
+            }
+            // 同比
+            overview.similar(overviewCompareEntity,yearData,lastYearData);
+
+            return overviewCompareEntity;
+        }
+
+        return overviewCompareEntity;
+    }
+
+
+    /**
+     * 项目综合分析-趋势图
+     * 销售额  26 saleAmount
+     ** 交易笔数 27 tradeAmount
+     * 客流量  28  customerNum
+     * 车流量 29  carNum
+     * 新增会员数 30  memIncrease
+     * 会员消费额  31 memSaleAmount
+     * 会员交易笔数 32 memTradeBills
+     * 会员客单价  33  memPerPrice
+     *
+     */
+    @Override
+    public List<TrendEntity> marketTrend(String dataType, MarketVo marketVo) {
+        RequestEntity requestEntity = new RequestEntity();
+        requestEntity.setMarketId(marketVo.getMarketId());
+        requestEntity.setDateType(marketVo.getDateType());
+        requestEntity.setStartTime(marketVo.getStartTime());
+        requestEntity.setEndTime(marketVo.getEndTime());
+
+        log.info("requestEntity ==>> {}", JSON.toJSONString(requestEntity));
+
+        if (Constants.SALEAMOUNT.equals(dataType)){
+            String URL = urlHeader+"26";
+            log.info("URL ==>> {}",URL);
+            return httpUtil.httpUtil(URL, requestEntity,TrendEntity.class);
+        }
+        if (Constants.TRADEBILLS.equals(dataType)){
+            String URL = urlHeader+"27";
+            log.info("URL ==>> {}",URL);
+            return httpUtil.httpUtil(URL, requestEntity,TrendEntity.class);
+        }
+        if (Constants.CUSTOMERNUM.equals(dataType)){
+            String URL = urlHeader+"28";
+            log.info("URL ==>> {}",URL);
+            return httpUtil.httpUtil(URL, requestEntity,TrendEntity.class);
+        }
+        if (Constants.CARNUM.equals(dataType)){
+            String URL = urlHeader+"29";
+            log.info("URL ==>> {}",URL);
+            return httpUtil.httpUtil(URL, requestEntity,TrendEntity.class);
+        }
+        if (Constants.MEMINCREASE.equals(dataType)){
+            String URL = urlHeader+"30";
+            return httpUtil.httpUtil(URL, requestEntity,TrendEntity.class);
+        }
+        if (Constants.MEMSALEAMOUNT.equals(dataType)){
+            String URL = urlHeader+"31";
+            log.info("URL ==>> {}",URL);
+            return httpUtil.httpUtil(URL, requestEntity,TrendEntity.class);
+        }
+        if (Constants.MEMTRADEBILLS.equals(dataType)){
+            String URL = urlHeader+"32";
+            log.info("URL ==>> {}",URL);
+            return httpUtil.httpUtil(URL, requestEntity,TrendEntity.class);
+        }
+        if (Constants.MEMPERPRICE.equals(dataType)){
+            String URL = urlHeader+"33";
+            log.info("URL ==>> {}",URL);
+            return httpUtil.httpUtil(URL, requestEntity,TrendEntity.class);
+        }
+        return new ArrayList<>();
+    }
+
+    @Override
+    public Map<String,List<PropertyProportionEntity>> proportionAnalysis(MarketVo marketVo) {
+        Map<String,List<PropertyProportionEntity>> map = new HashMap<>();
+        RequestEntity requestEntity = new RequestEntity();
+        requestEntity.setGroupId(marketVo.getGroupId());
+        requestEntity.setMarketId(marketVo.getMarketId());
+        requestEntity.setDateType(marketVo.getDateType());
+        requestEntity.setStartTime(marketVo.getStartTime());
+        requestEntity.setEndTime(marketVo.getEndTime());
+
+        log.info("requestEntity ==>> {}", JSON.toJSONString(requestEntity));
+        //销售额
+        String saleURL = urlHeader+"35";
+        List<PropertyProportionEntity> saleList = httpUtil.httpUtil(saleURL, requestEntity,PropertyProportionEntity.class);
+        map.put("saleList",saleList);
+
+        //车流量
+        String carURL = urlHeader+"36";
+        List<PropertyProportionEntity> carList = httpUtil.httpUtil(carURL, requestEntity,PropertyProportionEntity.class);
+        map.put("carList",carList);
+
+        //客流量
+        String customerURL = urlHeader+"34";
+        List<PropertyProportionEntity> customerList = httpUtil.httpUtil(customerURL, requestEntity,PropertyProportionEntity.class);
+        map.put("customerList",customerList);
+        //会员人数
+        String memberURL = urlHeader+"37";
+        List<PropertyProportionEntity> memberList = httpUtil.httpUtil(memberURL, requestEntity,PropertyProportionEntity.class);
+        map.put("memberList",memberList);
+
+        return map;
+    }
+
+    @Override
+    public List<WeatherEntity> weather(MarketVo marketVo) {
+        //根据集团id 项目id  获取cityCode
+        String cityCode = marketDao.queryCityCode(marketVo);
+
+        if (StringUtils.isBlank(cityCode)){
+            log.info("cant not find cityCode");
+            return null;
+        }
+
+        log.info("cityCode ==>> {}",cityCode);
+
+        RequestEntity requestEntity = new RequestEntity();
+        requestEntity.setCityCode(Long.valueOf(cityCode));
+        requestEntity.setStartTime(marketVo.getStartTime());
+        requestEntity.setEndTime(marketVo.getEndTime());
+
+        String URL = urlHeader+"50";
+        log.info("URL ==>> {}",URL);
+        return httpUtil.httpUtil(URL, requestEntity,WeatherEntity.class);
+    }
+
+    @Override
+    public SortEntity sort(String dataType,MallVo mallVo) {
+        String time = mallVo.getStartTime();
+        if (Constants.SALEAMOUNT.equals(dataType)){
+            //当年截至的今天数据
+            mallVo.setStartTime(timeUtils.getYear(mallVo.getStartTime()));
+            mallVo.setEndTime(time);
+            mallVo.setDateType(Constants.D);
+            List<SortMarketEntity> yearData = marketDao.querySaleAmount(mallVo);
+            //去年第一天截至到去年今天的数据
+            mallVo.setStartTime(timeUtils.getLastYearFirstDay(time, -1));
+            mallVo.setEndTime(timeUtils.getNowOfLastYear(time, -1));
+            List<SortMarketEntity> lastYearData = marketDao.querySaleAmount(mallVo);
+            return  getData(yearData,lastYearData,mallVo);
+        }
+        if (Constants.CARNUM.equals(dataType)){
+            //当年截至的今天数据
+            mallVo.setStartTime(timeUtils.getYear(mallVo.getStartTime()));
+            mallVo.setEndTime(time);
+            mallVo.setDateType(Constants.D);
+            List<SortMarketEntity> yearData = marketDao.queryCarNum(mallVo);
+            //去年第一天截至到去年今天的数据
+            mallVo.setStartTime(timeUtils.getLastYearFirstDay(time, -1));
+            mallVo.setEndTime(timeUtils.getNowOfLastYear(time, -1));
+            List<SortMarketEntity> lastYearData = marketDao.queryCarNum(mallVo);
+            return  getData(yearData,lastYearData,mallVo);
+        }
+        if (Constants.CUSTOMERNUM.equals(dataType)){
+            //当年截至的今天数据
+            mallVo.setStartTime(timeUtils.getYear(mallVo.getStartTime()));
+            mallVo.setEndTime(time);
+            mallVo.setDateType(Constants.D);
+            List<SortMarketEntity> yearData = marketDao.queryCustomerNum(mallVo);
+            //去年第一天截至到去年今天的数据
+            mallVo.setStartTime(timeUtils.getLastYearFirstDay(time, -1));
+            mallVo.setEndTime(timeUtils.getNowOfLastYear(time, -1));
+            List<SortMarketEntity> lastYearData = marketDao.queryCustomerNum(mallVo);
+            return  getData(yearData,lastYearData,mallVo);
+        }
+        if (Constants.MEMINCREASE.equals(dataType)){
+            //当年截至的今天数据
+            mallVo.setStartTime(timeUtils.getYear(mallVo.getStartTime()));
+            mallVo.setEndTime(time);
+            mallVo.setDateType(Constants.D);
+            List<SortMarketEntity> yearData = marketDao.queryMemIncrease(mallVo);
+            //去年第一天截至到去年今天的数据
+            mallVo.setStartTime(timeUtils.getLastYearFirstDay(time, -1));
+            mallVo.setEndTime(timeUtils.getNowOfLastYear(time, -1));
+            List<SortMarketEntity> lastYearData = marketDao.queryMemIncrease(mallVo);
+            return  getData(yearData,lastYearData,mallVo);
+        }
+        return new SortEntity();
+    }
+
+    private SortEntity getData(List<SortMarketEntity> yearData,List<SortMarketEntity> lastYearData,MallVo mallVo) {
+        log.info("今年的排名 ==>> {}",JSON.toJSONString(yearData));
+        log.info("去年年的排名 ==>> {}",JSON.toJSONString(lastYearData));
+        SortEntity sortEntity = new SortEntity();
+        //
+        if (yearData != null && lastYearData != null) {
+            int size = yearData.size() >= lastYearData.size() ? lastYearData.size() : yearData.size();
+            int yearSort = 0;
+            int lastYearSort = 0;
+
+            for (int i = 0; i < size; i++) {
+                if (yearData.get(i).getMarketId().equals(mallVo.getMarketId())) {
+                    yearSort = yearData.get(i).getSort();
+                }
+                if (lastYearData.get(i).getMarketId().equals(mallVo.getMarketId())) {
+                    lastYearSort = yearData.get(i).getSort();
+                }
+            }
+            sortEntity.setMarketSort(yearSort);
+            sortEntity.setChangeNum(yearSort - lastYearSort);
+            sortEntity.setTotal(yearData.size());
+            return sortEntity;
+        }
+        log.info("项目排名-今年数据或者去年数据为空！");
+        return sortEntity;
+    }
+
+    @Override
+    public List<MarketIndustryAnalysis> industryAnalysis(MarketVo marketVo) {
+        return marketDao.queryIndustryAnalysis(marketVo);
+    }
+
+}

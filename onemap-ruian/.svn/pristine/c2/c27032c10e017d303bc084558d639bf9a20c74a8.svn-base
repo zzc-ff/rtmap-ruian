@@ -1,0 +1,258 @@
+package com.rtmap.modules.app.controller;
+
+import com.alibaba.fastjson.JSON;
+import com.rtmap.common.exception.RRException;
+import com.rtmap.common.utils.R;
+import com.rtmap.modules.app.entity.*;
+import com.rtmap.modules.app.entity.vo.MallVo;
+import com.rtmap.modules.app.entity.vo.MarketVo;
+import com.rtmap.modules.app.service.MarketService;
+import com.rtmap.modules.app.utils.ValidUtils;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import javax.validation.Valid;
+import java.util.ArrayList;
+import java.util.List;
+
+
+/**
+ * 项目驾驶舱
+ */
+@RestController
+@Slf4j
+@RequestMapping("/market")
+@Api("项目驾驶舱")
+public class AppMarketController {
+
+    @Autowired
+    MarketService marketService;
+    @Autowired
+    ValidUtils validUtils;
+
+    /**
+     * 今日快报
+     */
+    @RequestMapping("/todayNews")
+    @ApiOperation("集团今日快报")
+    public R todayNews(MarketVo marketVo){
+        //参数： groupId marketId
+        if (validUtils.notBlank(marketVo.getGroupId(),marketVo.getMarketId())){
+            throw new RRException("参数异常，请联系管理人员！",400);
+        }
+        //销售额、交易笔数、客流量、车流量、交易会员数、会员消费额占比
+        RealTimeEntity realTimeEntity = new RealTimeEntity();
+        realTimeEntity.setSellAmount(1222344);
+        realTimeEntity.setTradeAmount(132374);
+        realTimeEntity.setCustomerNum(147623);
+        realTimeEntity.setCarNum(21422);
+        realTimeEntity.setMemberNum(18212);
+        realTimeEntity.setMemSaleRatio(0.99);
+
+        //项目指标
+        //每个项目的销售额
+        List<MallRealSaleEntity> list = new ArrayList<>();
+
+        MallRealSaleEntity m1 = new MallRealSaleEntity();
+        m1.setMallId("1");
+        m1.setMallName("太平桥项目");
+        m1.setSellAmount(3132274);
+        list.add(m1);
+
+        MallRealSaleEntity m2 = new MallRealSaleEntity();
+        m2.setMallId("2");
+        m2.setMallName("瑞虹项目");
+        m2.setSellAmount(3123274);
+        list.add(m2);
+
+        MallRealSaleEntity m3 = new MallRealSaleEntity();
+        m3.setMallId("3");
+        m3.setMallName("虹桥项目");
+        m3.setSellAmount(3123274);
+        list.add(m3);
+
+        MallRealSaleEntity m4 = new MallRealSaleEntity();
+        m4.setMallId("4");
+        m4.setMallName("杨浦项目");
+        m4.setSellAmount(3123274);
+        list.add(m4);
+
+        MallRealSaleEntity m5 = new MallRealSaleEntity();
+        m5.setMallId("5");
+        m5.setMallName("重庆项目");
+        m5.setSellAmount(3123274);
+        list.add(m5);
+
+        MallRealSaleEntity m6 = new MallRealSaleEntity();
+        m6.setMallId("6");
+        m6.setMallName("佛山项目");
+        m6.setSellAmount(3123274);
+        list.add(m6);
+
+        return R.ok().put("marketData", realTimeEntity).put("mallList",list);
+    }
+
+    /**
+     * 我的关注-昨日销售额
+     */
+    @RequestMapping("/yesterdayMallSale")
+    @ApiOperation("集团今日快报")
+    public R yesterdayMallSale(MarketVo marketVo){
+        //没有关注功能，项目昨日销售额前10 的店铺
+        List<FocusShopEntity> list = marketService.yesterdayMallSale(marketVo);
+        FocusShopEntity focusShopEntity = new FocusShopEntity();
+        focusShopEntity.setMallId("322");
+        focusShopEntity.setMallName("小天地");
+        focusShopEntity.setMallEName("dianPu");
+        focusShopEntity.setShopId("667");
+        focusShopEntity.setShopName("热风");
+        focusShopEntity.setSellAmount(68788);
+        list.add(focusShopEntity);
+        return R.ok().put("list",list);
+    }
+
+    /**
+     * 获取项目年度快报
+     * 项目年度销售额、年度客流人次、车流、 会员人数
+     * 同比、         同比、        同比、消费额占比
+     * 项目达成率
+     */
+    @RequestMapping("/mall/marketYearNews")
+    @ApiOperation("获取项目列表以及项目底下mall数量")
+    public R marketYearNews(MarketVo marketVo){
+        if (validUtils.notBlank(marketVo.getGroupId(),marketVo.getMarketId())){
+            throw new RRException("参数异常，请联系管理人员！",400);
+        }
+        RealTimeEntity realTimeEntity = new RealTimeEntity();
+        RealTimeCompareEntity realTimeCompareEntity = new RealTimeCompareEntity();
+
+        realTimeCompareEntity.setSellAmount(33123);
+        realTimeCompareEntity.setSaleSimilar(0.9);
+
+        realTimeCompareEntity.setCustomerNum(68878);
+        realTimeCompareEntity.setCustomerSimilar(0.9);
+
+        realTimeCompareEntity.setCarNum(32523);
+        realTimeCompareEntity.setCarSimilar(0.9);
+
+        realTimeCompareEntity.setMemberNum(6879);
+        realTimeCompareEntity.setMemSaleAmount(3215);
+        realTimeCompareEntity.setMemSaleRatio(3215 * 1.0 / 33123);
+        return R.ok().put("marketRealTimeData",realTimeCompareEntity);
+    }
+
+    /**
+     * 获取项目下所有的mall,用于地图切换mall
+     */
+    @RequestMapping("/getAllMallOfMarket")
+    @ApiOperation("获取项目下所有的mall")
+    public R queryAllMallOfMarket(@Valid MarketVo marketVo){
+        List<MallEntity> list = marketService.queryAllMallOfMarket(marketVo);
+        return R.ok().put("list",list);
+    }
+
+    /**
+     * 获取mall下所有的店铺的实时销售额
+     */
+    @RequestMapping("/realTimeSaleAmount")
+    public R realTimeSaleAmount(@Valid MallVo mallVo){
+        // todo 需要数据每个店铺的 poi_no shopId shopName 实时销售额
+//        marketService.realTimeSaleAmount(marketVo);
+        List<MarketRealSaleAmountEntity> list = new ArrayList<>();
+        MarketRealSaleAmountEntity m1 = new MarketRealSaleAmountEntity();
+        m1.setShopId("1");
+        m1.setShopName("店铺1");
+        m1.setPoiNo("123");
+        m1.setSellAmount(354512);
+        MarketRealSaleAmountEntity m2 = new MarketRealSaleAmountEntity();
+        m2.setShopId("1");
+        m2.setShopName("店铺1");
+        m2.setPoiNo("123");
+        m2.setSellAmount(354512);
+        list.add(m1);
+        list.add(m2);
+        return R.ok().put("list",list);
+    }
+
+    /**
+     * 获取mall下当前楼层所有的店铺的上月销售坪效
+     */
+    @RequestMapping("/saleEffect")
+    public R saleEffect(@Valid MallVo mallVo){
+        return marketService.saleEffect(mallVo);
+    }
+
+
+    /**
+     * 最近30天销售与交易
+     */
+    @RequestMapping("/saleAndTrade")
+    @ApiOperation("项目最近30天销售与交易数据")
+    public R saleAndTrade(@Valid MarketVo marketVo){
+        log.info("requestJson ==>> {}", JSON.toJSONString(marketVo));
+        List<SaleAndTradeEntity> list =  marketService.saleAndTrade(marketVo);
+        return R.ok().put("list",list);
+    }
+
+    /**
+     * 最近30天车流与客流
+     */
+    @RequestMapping("/carAndCustomer")
+    @ApiOperation("项目最近30天车流与客流数据")
+    public R carAndCustomer(@Valid MarketVo marketVo){
+        log.info("requestJson ==>> {}", JSON.toJSONString(marketVo));
+        List<CarAndCustomerEntity> list = marketService.carAndCustomer(marketVo);
+        return R.ok().put("list",list);
+    }
+
+    /**
+     * 本年MALL、街区销售达成
+     */
+    @RequestMapping("/mall/allYearAchieved")
+    @ApiOperation("本年MALL、街区销售达成")
+    public R AllYearAchieved(@Valid MarketVo marketVo){
+        log.info("requestJson ==>> {}", JSON.toJSONString(marketVo));
+        List<MallYearAchievedEntity> list = marketService.AllYearAchieved(marketVo);
+        return R.ok().put("list",list);
+    }
+
+    /**
+     * 上月mall销售
+     */
+    @RequestMapping("/mall/lastMonthSale")
+    @ApiOperation("上月mall销售")
+    public R lastMonthSale(@Valid MarketVo marketVo){
+        log.info("requestJson ==>> {}", JSON.toJSONString(marketVo));
+        List<MallLastMonthEntity> list = marketService.lastMonthSale(marketVo);
+        return R.ok().put("list",list);
+    }
+
+    /**
+     * 上月mall客流、车流、客单价
+     */
+    @RequestMapping("/mall/customerAndCarAndPrice")
+    @ApiOperation("上月mall客流、车流、客单价")
+    public R customerAndCarAndPrice(@Valid MarketVo marketVo){
+        log.info("requestJson ==>> {}", JSON.toJSONString(marketVo));
+        List<MallCustomerCarPriceEntity> list = marketService.customerAndCarAndPrice(marketVo);
+        return R.ok().put("list",list);
+    }
+
+    /**
+     * 当前mall、街区会员
+     */
+    @RequestMapping("/mall/memberCountAndIncrease")
+    @ApiOperation("当前mall、街区会员")
+    public R memberCountAndIncrease(@Valid MarketVo marketVo){
+        log.info("requestJson ==>> {}", JSON.toJSONString(marketVo));
+        List<MallMemberEntity> list = marketService.memberCountAndIncrease(marketVo);
+        return R.ok().put("list",list);
+    }
+
+
+}

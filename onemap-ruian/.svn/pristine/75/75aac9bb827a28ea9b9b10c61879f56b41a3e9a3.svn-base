@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.rtmap.modules.app.dao.MarketDao">
+
+<select id="queryNatureData" parameterType="com.rtmap.modules.app.entity.vo.MarketVo" resultType="com.rtmap.modules.app.entity.OverviewEntity">
+select pd.stat_date days,pd.stat_date_type dateType,pd.add_mem_num memberIncrease,gp.amt saleAmount,mpd.customer_num customerNum,tgp.in_car_num carNum from st_mem_market_dwmy pd
+inner join st_sale_gm gp  on  gp.market_id = pd.market_id and gp.stat_date_type = pd.stat_date_type and gp.stat_date = pd.stat_date
+inner join st_customer_market_dwmy mpd on mpd.market_id = pd.market_id and mpd.stat_date_type = pd.stat_date_type and mpd.stat_date = pd.stat_date
+inner join cf_traffic_trend_gp tgp on tgp.market_id = pd.market_id and tgp.stat_date = pd.stat_date and tgp.stat_date_type = pd.stat_date_type
+where pd.stat_date_type = #{dateType} and pd.stat_date = #{startTime} and pd.market_id = #{marketId} and pd.group_id = #{groupId}
+</select>
+
+<select id="queryUncompleteMonth" parameterType="com.rtmap.modules.app.entity.vo.MarketVo" resultType="com.rtmap.modules.app.entity.OverviewEntity">
+select SUM(pd.add_mem_num) memberIncrease,SUM(gp.amt) saleAmount,SUM(mpd.customer_num) customerNum, SUM(tgp.in_car_num) carNum
+from st_mem_market_dwmy pd
+inner join st_sale_gm gp  on  gp.market_id = pd.market_id and gp.stat_date_type = pd.stat_date_type and gp.stat_date = pd.stat_date
+inner join st_customer_market_dwmy mpd on mpd.market_id = pd.market_id and mpd.stat_date_type = pd.stat_date_type and mpd.stat_date = pd.stat_date
+inner join cf_traffic_trend_gp tgp on tgp.market_id = pd.market_id and tgp.stat_date = pd.stat_date and tgp.stat_date_type = pd.stat_date_type
+where pd.stat_date_type = #{dateType} and pd.stat_date between #{startTime} and #{endTime} and pd.market_id = #{marketId} and pd.group_id = #{groupId}
+group by pd.market_id
+</select>
+
+    <select id="querySaleAmount" parameterType="com.rtmap.modules.app.entity.vo.MallVo" resultType="com.rtmap.modules.app.entity.SortMarketEntity">
+        SELECT
+            gm.market_id marketId,
+            @r:= @r + 1 as sort,
+            sum( gm.amt ) as resultData
+        FROM
+            st_sale_gm gm ,(select @r:=0) a
+        WHERE
+            gm.stat_date_type = #{dateType}
+            AND gm.group_id = #{groupId}
+            AND gm.stat_date BETWEEN #{startTime}
+            AND #{endTime}
+            GROUP BY  gm.market_id
+            ORDER BY  resultData
+    </select>
+
+    <select id="queryCarNum" parameterType="com.rtmap.modules.app.entity.vo.MallVo" resultType="com.rtmap.modules.app.entity.SortMarketEntity">
+       SELECT
+            gp.market_id marketId,
+            @r := @r + 1 AS sort,
+            SUM( gp.in_car_num ) as resultData
+        FROM
+            cf_traffic_trend_gp gp,
+            (SELECT @r := 0 ) a
+        WHERE
+            gp.stat_date_type = #{dateType}
+            AND gp.group_id = #{groupId}
+            AND gp.stat_date BETWEEN #{startTime}
+            AND #{endTime}
+        GROUP BY
+            gp.market_id
+        ORDER BY
+            resultData
+    </select>
+
+    <select id="queryCustomerNum" parameterType="com.rtmap.modules.app.entity.vo.MallVo" resultType="com.rtmap.modules.app.entity.SortMarketEntity">
+       SELECT
+                gp.market_id marketId,
+                @r := @r + 1 AS sort,
+                SUM( gp.customer_num ) as resultData
+        FROM
+                st_customer_market_dwmy gp,
+                (SELECT @r := 0 ) a
+        WHERE
+                gp.stat_date_type = #{dateType}
+                AND gp.group_id = #{groupId}
+                AND gp.stat_date BETWEEN #{startTime}
+                AND #{endTime}
+        GROUP BY
+                gp.market_id
+        ORDER BY
+                resultData
+    </select>
+
+    <select id="queryMemIncrease" parameterType="com.rtmap.modules.app.entity.vo.MallVo" resultType="com.rtmap.modules.app.entity.SortMarketEntity">
+        SELECT
+                gp.market_id marketId,
+                @r := @r + 1 AS sort,
+                SUM( gp.add_mem_num ) as resultData
+        FROM
+                st_mem_market_dwmy gp,
+                (SELECT @r := 0 ) a
+        WHERE
+                gp.stat_date_type = #{dateType}
+                AND gp.group_id = #{groupId}
+                AND gp.stat_date BETWEEN #{startTime}
+                AND #{endTime}
+        GROUP BY
+                gp.market_id
+        ORDER BY
+                resultData
+    </select>
+
+    <select id="queryIndustryAnalysis" parameterType="com.rtmap.modules.app.entity.vo.MarketVo" resultType="com.rtmap.modules.app.entity.MarketIndustryAnalysis">
+            select
+            a.industryId,
+            a.indestryName,
+            a.saleAmount,
+            a.area,
+            a.saleEffect,
+            a.perCustomerPrice,
+            b.shopNum
+            from
+            (SELECT
+                gp.industry1 industryId,
+                dim_shop.industry1_name indestryName,
+                gp.amt saleAmount,
+                gp.nfa area,
+                gp.amt_per_nfa saleEffect,
+                gp.amt_per_bill  perCustomerPrice
+            FROM
+                st_sale_gmi1 gp
+                left join dim_shop on dim_shop.industry1 = gp.industry1
+            WHERE
+                gp.stat_date_type = #{dateType}
+                AND gp.stat_date = #{startTime}
+                AND gp.group_id = #{groupId}
+                AND gp.market_id =#{marketId}
+            ) a,(
+            SELECT
+                gp.industry1 industryId,
+                count(0) shopNum
+            FROM
+                st_sale_gmi1 gp
+                left join dim_shop on dim_shop.industry1 = gp.industry1
+            WHERE
+                gp.stat_date_type = #{dateType}
+                AND gp.stat_date = #{startTime}
+                AND gp.group_id = #{groupId}
+                AND gp.market_id = #{marketId}
+                GROUP BY industryId
+                ) b
+                where a.industryId = b.industryId
+    </select>
+
+    <select id="queryAllMallOfMarket" parameterType="com.rtmap.modules.app.entity.vo.MarketVo" resultType="com.rtmap.modules.app.entity.MallEntity">
+        SELECT
+            dm.property_no mallId,
+            dm.property_name  mallName
+        FROM
+            dim_property dm
+        WHERE
+            dm.group_id = #{groupId}
+            AND dm.market_id =#{marketId}
+    </select>
+
+    <select id="queryCityCode" parameterType="com.rtmap.modules.app.entity.vo.MarketVo" resultType="java.lang.String">
+        SELECT
+            dm_gaode_city_code.`code` cityCode
+        FROM
+            dim_market
+            LEFT JOIN dm_gaode_city_code ON dm_gaode_city_code.city = dim_market.market_city
+        WHERE
+            dim_market.group_id = #{groupId}
+            AND dim_market.market_id = #{marketId}
+    </select>
+
+</mapper>

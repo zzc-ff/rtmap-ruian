@@ -1,0 +1,186 @@
+package com.rtmap.modules.app.service.impl;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.TypeReference;
+import com.rtmap.modules.app.entity.*;
+import com.rtmap.modules.app.entity.vo.MallVo;
+import com.rtmap.modules.app.service.MallService;
+import com.rtmap.modules.app.utils.HttpUtil;
+import com.rtmap.modules.app.utils.TimeUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+@Slf4j
+public class MallServiceImpl implements MallService {
+
+    @Autowired
+    TimeUtils timeUtils;
+    @Value("${common.request.url}")
+    String urlHeader;
+    @Autowired
+    HttpUtil httpUtil;
+
+    @Override
+    public List<SaleAndTradeEntity> saleAndTrade(MallVo mallVo) {
+
+        String startTime = timeUtils.getDay(mallVo.getNowTime(),mallVo.getOffsetTime());
+        RequestEntity requestEntity = new RequestEntity();
+        requestEntity.setDateType(mallVo.getDateType());
+        requestEntity.setStartTime(startTime);
+        requestEntity.setEndTime(mallVo.getNowTime());
+        requestEntity.setMarketId(mallVo.getMarketId());
+        log.info("requestJson ==>> {}", JSON.toJSONString(requestEntity));
+
+        String URL = urlHeader + "20";
+        log.info("URL ==>> {}",URL);
+        JSONArray resultJsonList = httpUtil.httpUtil(URL, requestEntity);
+
+        List<SaleAndTradeEntity> list = new ArrayList<>();
+
+        if (resultJsonList == null){
+            return list;
+        }
+
+        list = JSON.parseObject(resultJsonList.toJSONString(), new TypeReference<ArrayList<SaleAndTradeEntity>>() {});
+
+        return list;
+    }
+
+    @Override
+    public List<CarAndCustomerEntity> carAndCustomer(MallVo mallVo) {
+        String startTime = timeUtils.getDay(mallVo.getNowTime(),mallVo.getOffsetTime());
+        RequestEntity requestEntity = new RequestEntity();
+        requestEntity.setDateType(mallVo.getDateType());
+        requestEntity.setStartTime(startTime);
+        requestEntity.setEndTime(mallVo.getNowTime());
+        requestEntity.setMarketId(mallVo.getMarketId());
+        log.info("requestJson ==>> {}", JSON.toJSONString(requestEntity));
+
+        String URL = urlHeader + "21";
+        log.info("URL ==>> {}",URL);
+        JSONArray resultJsonList = httpUtil.httpUtil(URL, requestEntity);
+
+        List<CarAndCustomerEntity> list = new ArrayList<>();
+
+        if (resultJsonList == null){
+            return list;
+        }
+
+        list = JSON.parseObject(resultJsonList.toJSONString(), new TypeReference<ArrayList<CarAndCustomerEntity>>() {});
+
+        return list;
+    }
+
+    @Override
+    public List<MallYearAchievedEntity> AllYearAchieved(MallVo mallVo) {
+        String lastMonth = timeUtils.getMonth(mallVo.getNowTime(),mallVo.getOffsetTime());
+
+        RequestEntity requestEntity = new RequestEntity();
+        requestEntity.setDateType(mallVo.getDateType());
+        requestEntity.setStartTime(lastMonth);
+        requestEntity.setMarketId(mallVo.getMarketId());
+
+        log.info("requestJson ==>> {}",JSON.toJSONString(requestEntity));
+
+        String URL = urlHeader + "22";
+        log.info("URL ==>> {}",URL);
+        JSONArray resultJsonList = httpUtil.httpUtil(URL, requestEntity);
+
+        List<MallYearAchievedEntity> list = new ArrayList<>();
+
+        if (resultJsonList == null){
+            return list;
+        }
+
+        list = JSON.parseObject(resultJsonList.toJSONString(), new TypeReference<ArrayList<MallYearAchievedEntity>>() {});
+
+        return list;
+    }
+
+    @Override
+    public List<MallLastMonthEntity> lastMonthSale(MallVo mallVo) {
+
+        String lastMonth = timeUtils.getMonth(mallVo.getNowTime(),mallVo.getOffsetTime());
+
+        RequestEntity requestEntity = new RequestEntity();
+        requestEntity.setDateType(mallVo.getDateType());
+        requestEntity.setStartTime(lastMonth);
+        requestEntity.setMarketId(mallVo.getMarketId());
+
+        log.info("requestJson ==>> {}",JSON.toJSONString(requestEntity));
+
+        String URL = urlHeader + "23";
+        log.info("URL ==>> {}",URL);
+        JSONArray resultJsonList = httpUtil.httpUtil(URL, requestEntity);
+
+        List<MallLastMonthEntity> list = new ArrayList<>();
+
+        if (resultJsonList == null){
+            return list;
+        }
+
+        list = JSON.parseObject(resultJsonList.toJSONString(), new TypeReference<ArrayList<MallLastMonthEntity>>() {});
+
+        return list;
+    }
+
+    @Override
+    public List<MallCustomerCarPriceEntity> customerAndCarAndPrice(MallVo mallVo) {
+
+        String lastMonth = timeUtils.getMonth(mallVo.getNowTime(),mallVo.getOffsetTime());
+
+        RequestEntity requestEntity = new RequestEntity();
+        requestEntity.setDateType(mallVo.getDateType());
+        requestEntity.setStartTime(lastMonth);
+        requestEntity.setMarketId(mallVo.getMarketId());
+
+        log.info("requestJson ==>> {}",JSON.toJSONString(requestEntity));
+        //获取项目车流
+        String URL = urlHeader + "24";
+        log.info("URL ==>> {}",URL);
+        JSONArray resultJsonList = httpUtil.httpUtil(URL, requestEntity);
+
+        List<MallCustomerCarPriceEntity> list = new ArrayList<>();
+
+        if (resultJsonList == null){
+            return list;
+        }
+
+        list = JSON.parseObject(resultJsonList.toJSONString(), new TypeReference<ArrayList<MallCustomerCarPriceEntity>>(){});
+
+
+        return list;
+    }
+
+    @Override
+    public List<MallMemberEntity> memberCountAndIncrease(MallVo mallVo) {
+
+        RequestEntity requestEntity = new RequestEntity();
+        requestEntity.setDateType(mallVo.getDateType());
+        requestEntity.setStartTime(mallVo.getNowTime());
+        requestEntity.setMarketId(mallVo.getMarketId());
+
+        log.info("requestJson ==>> {}",JSON.toJSONString(requestEntity));
+
+        String URL = urlHeader + "25";
+        log.info("URL ==>> {}",URL);
+        JSONArray resultJsonList = httpUtil.httpUtil(URL, requestEntity);
+
+        List<MallMemberEntity> list = new ArrayList<>();
+
+        if (resultJsonList == null){
+            return list;
+        }
+
+        list = JSON.parseObject(resultJsonList.toJSONString(), new TypeReference<ArrayList<MallMemberEntity>>() {});
+
+        return list;
+    }
+}

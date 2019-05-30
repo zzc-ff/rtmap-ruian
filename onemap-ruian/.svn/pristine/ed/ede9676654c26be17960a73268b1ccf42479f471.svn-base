@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.rtmap.modules.sys.dao.SysUserMarketDao">
+
+	<resultMap id="marketList" type="com.rtmap.modules.sys.entity.SysUserMarketEntity" >
+		<id property="id" column="id"/>
+		<result property="marketId" column="market_id"/>
+		<result property="marketName" column="market_name"/>
+		<result property="userId" column="user_id"/>
+		<result property="status" column="status"/>
+		<collection property="propertyName" ofType="string">
+			<constructor>
+				<arg column="property_name"/>
+			</constructor>
+		</collection>
+	</resultMap>
+
+	<select id="getMarketList" resultType="com.rtmap.modules.sys.entity.SysMarketEntity">
+		SELECT market_id marketId,market_name marketName from dim_market
+	</select>
+
+
+	<select id="getUserMarketList" resultMap="marketList">
+			SELECT
+			dim_market.id,
+			dim_market.market_id,
+			dim_market.market_name,
+			sys_user_market.user_id,
+			dim_property.property_name,
+			CASE
+			WHEN sys_user_market.user_id is not NULL THEN 1
+			ELSE 0 END `status`
+		FROM
+			dim_market
+			LEFT JOIN sys_user_market ON dim_market.market_id = sys_user_market.market_id and sys_user_market.user_id = #{userId}
+			LEFT JOIN dim_property on dim_property.market_id = dim_market.market_id
+	</select>
+
+</mapper>

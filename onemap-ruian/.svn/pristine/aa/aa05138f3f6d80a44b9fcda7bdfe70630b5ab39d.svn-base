@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.rtmap.modules.app.dao.GroupDao">
+<select id="querySellData" resultType="com.rtmap.modules.app.entity.SaleAndTradeEntity">
+SELECT st_sale_g.trd_amt sellAmount,st_sale_g.ymd days
+from st_sale_g
+WHERE st_sale_g.ymd_type = 'D' and  st_sale_g.ymd BETWEEN #{startTime} AND #{endTime}
+</select>
+
+<select id="queryCarNum" resultType="com.rtmap.modules.app.entity.CarAndCustomerEntity">
+SELECT
+    cf_traffic_overview.in_car_num carNum,cf_traffic_overview.statis_data days
+FROM
+	 cf_traffic_overview
+WHERE
+	cf_traffic_overview.statis_data BETWEEN #{startTime} AND #{endTime}
+</select>
+
+
+
+<select id="querySaleAndEffect" resultType="com.rtmap.modules.app.entity.MarketLastMonthEntity">
+SELECT
+	dim_market.market_id marketId,
+	dim_market.market_name marketName,
+	st_sale_gpm.trd_amt marketSaleAmount,
+	st_sale_gpm.trd_amt_per_nfa marketSaleEffect,
+	st_sale_gpm.ymd days
+FROM
+	dim_market
+	LEFT JOIN st_sale_gpm ON st_sale_gpm.ymd_type = 'M'
+	AND dim_market.market_id = st_sale_gpm.m_id
+	AND st_sale_gpm.ymd = #{lastMonth}
+</select>
+
+
+
+</mapper>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.rtmap.modules.sys.dao.SysUserMarketDao">
+
+	<resultMap id="marketList" type="com.rtmap.modules.sys.entity.SysUserMarketEntity" >
+		<id property="id" column="id"/>
+		<result property="marketId" column="market_id"/>
+		<result property="marketName" column="market_name"/>
+		<result property="userId" column="user_id"/>
+		<result property="status" column="status"/>
+		<collection property="propertyList"  ofType="com.rtmap.modules.sys.entity.PropertyEntity">
+			<id property="propertyNo" column="property_no"/>
+			<result property="propertyName" column="property_name"/>
+		</collection>
+	</resultMap>
+
+	<select id="getMarketList" resultType="com.rtmap.modules.sys.entity.SysMarketEntity">
+		SELECT market_id marketId,market_name marketName from dim_market
+	</select>
+
+
+	<select id="getUserMarketList" resultMap="marketList">
+			SELECT
+			dim_market.id,
+			dim_market.market_id,
+			dim_market.market_name,
+			sys_user_market.user_id,
+			dim_property.property_no,
+			dim_property.property_name,
+			CASE
+			WHEN sys_user_market.user_id is not NULL THEN 1
+			ELSE 0 END `status`
+		FROM
+			dim_market
+			LEFT JOIN sys_user_market ON dim_market.market_id = sys_user_market.market_id and sys_user_market.user_id = #{userId}
+			LEFT JOIN dim_property on dim_property.market_id = dim_market.market_id
+			ORDER BY dim_market.id
+	</select>
+
+
+	<select id="queryMarketIdList" resultType="java.lang.String">
+		SELECT
+			dim_market.id
+		FROM
+			dim_market
+			LEFT JOIN sys_user_market ON dim_market.market_id = sys_user_market.market_id and sys_user_market.user_id = #{userId}
+		  where
+		  sys_user_market.user_id is not NULL
+		  ORDER BY dim_market.id
+	</select>
+
+
+
+	<select id="getUserGroupList" resultType="com.rtmap.modules.sys.entity.SysUserGroupEntity">
+		SELECT
+			sys_menu.`name`,
+			sys_role_menu.role_id,
+			sys_user_role.user_id,
+			CASE
+			WHEN sys_user_role.user_id is not null THEN 1
+			ELSE 0 END `status`
+		FROM
+			sys_menu
+			LEFT JOIN sys_role_menu ON sys_menu.menu_id = sys_role_menu.menu_id
+			LEFT JOIN sys_user_role ON sys_user_role.role_id = sys_role_menu.role_id AND sys_user_role.user_id = #{userId}
+		WHERE
+			sys_menu.`name` = '瑞安集团驾驶舱'
+			GROUP BY sys_menu.`name`
+	</select>
+
+</mapper>

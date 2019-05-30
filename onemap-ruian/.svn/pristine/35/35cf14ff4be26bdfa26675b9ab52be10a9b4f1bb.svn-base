@@ -1,0 +1,120 @@
+package com.rtmap.devtest;
+
+import com.alibaba.fastjson.JSON;
+import com.rtmap.DynamicDataSourceTest;
+import com.rtmap.common.utils.R;
+import com.rtmap.modules.app.controller.AppMallShopAnalysisController;
+import com.rtmap.modules.app.entity.vo.ParameterVo;
+import com.rtmap.modules.app.utils.Constants;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest
+@Slf4j
+public class MallShopAnalysisTest {
+
+    @Autowired
+    AppMallShopAnalysisController appMallShopAnalysisController;
+
+    /**
+     * 波士顿分析
+     */
+    @Test
+    public void bostonShopList(){
+        ParameterVo parameterVo = new ParameterVo();
+        parameterVo.setGroupId("集团-1");
+        parameterVo.setMarketId("项目-11");
+        parameterVo.setMallId("地块-111");
+        parameterVo.setDateType("Y");
+        parameterVo.setStartTime("20190101");
+//        parameterVo.setFloorId("1");
+        parameterVo.setIndustryId("1");
+        R r = appMallShopAnalysisController.bostonShopList(parameterVo);
+        log.info("入参==>> {}", JSON.toJSONString(parameterVo));
+        log.info("出参 ==>> {}",JSON.toJSONString(r));
+    }
+
+    /**
+     * 店铺详情同比环比
+     */
+
+    @Test
+    public void shopCompare(){
+        ParameterVo parameterVo =new  ParameterVo();
+        parameterVo.setGroupId("集团-1");
+        parameterVo.setMarketId("项目-11");
+        parameterVo.setMallId("地块-111");
+        parameterVo.setDateType("Y");
+        parameterVo.setStartTime("20190101");
+        parameterVo.setShopId("店铺-1111");
+        R r = appMallShopAnalysisController.shopCompare(parameterVo);
+        log.info("入参==>> {}", JSON.toJSONString(parameterVo));
+        log.info("出参 ==>> {}",JSON.toJSONString(r));
+    }
+
+    /**
+     * 店铺详情-时间段内店铺指标求和
+     */
+    @Test
+    public void shopData(){
+        ParameterVo parameterVo =new  ParameterVo();
+        parameterVo.setGroupId("集团-1");
+        parameterVo.setMarketId("项目-11");
+        parameterVo.setMallId("地块-111");
+        parameterVo.setDateType("Y");
+        parameterVo.setStartTime("20190101");
+        parameterVo.setShopId("店铺-1111");
+        R r = appMallShopAnalysisController.shopData(parameterVo);
+        log.info("入参==>> {}", JSON.toJSONString(parameterVo));
+        log.info("出参 ==>> {}",JSON.toJSONString(r));
+    }
+
+    /**
+     * 时间段内每天的数据指标
+     */
+    @Test
+    public void tend(){
+        ParameterVo parameterVo =new  ParameterVo();
+        parameterVo.setGroupId("集团-1");
+        parameterVo.setMarketId("项目-11");
+        parameterVo.setMallId("地块-111");
+        parameterVo.setDateType("D");
+        parameterVo.setStartTime("20180101");
+        parameterVo.setEndTime("20200101");
+        parameterVo.setShopId("店铺-1111");
+        R r = appMallShopAnalysisController.trend(Constants.SALEAMOUNT, parameterVo);
+        log.info("入参==>> {}", JSON.toJSONString(parameterVo));
+        log.info("出参 ==>> {}",JSON.toJSONString(r));
+    }
+
+    /**
+     * 店铺列表
+     */
+    @Test
+    public void shopList(){
+        ParameterVo parameterVo =new  ParameterVo();
+        parameterVo.setGroupId("集团-1");
+        parameterVo.setMarketId("项目-11");
+        parameterVo.setMallId("地块-111");
+        parameterVo.setDateType("D");
+        parameterVo.setStartTime("20190101");
+//        parameterVo.setEndTime("20200101");
+        parameterVo.setWord("saleAmount");
+        parameterVo.setLift("desc");
+        parameterVo.setPage(1);
+        parameterVo.setPageSize(10);
+
+        R r = appMallShopAnalysisController.shopListWithSort(parameterVo);
+        log.info("入参==>> {}", JSON.toJSONString(parameterVo));
+        log.info("出参 ==>> {}",JSON.toJSONString(r));
+    }
+
+
+}

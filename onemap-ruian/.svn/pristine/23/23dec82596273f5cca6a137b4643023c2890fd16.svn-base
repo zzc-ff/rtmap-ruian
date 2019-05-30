@@ -1,0 +1,19 @@
+package com.rtmap.modules.app.entity;
+
+import lombok.Data;
+
+@Data
+public class MapSaleEffect {
+    /**
+     * mall id
+     */
+    private String mallId;
+    /**
+     * floor Id
+     */
+    private String floorId;
+    /**
+     * 上月销售坪效
+     */
+    private long saleEffect;
+}

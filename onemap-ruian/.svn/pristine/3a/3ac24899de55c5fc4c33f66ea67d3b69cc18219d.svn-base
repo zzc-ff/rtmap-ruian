@@ -1,0 +1,267 @@
+package com.rtmap.modules.app.service.impl;
+
+import com.alibaba.fastjson.JSON;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.rtmap.common.utils.PageUtils;
+import com.rtmap.common.utils.R;
+import com.rtmap.modules.app.dao.MallDao;
+import com.rtmap.modules.app.entity.*;
+import com.rtmap.modules.app.entity.vo.ParameterVo;
+import com.rtmap.modules.app.service.MallShopAnalysisService;
+import com.rtmap.modules.app.utils.*;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+@Slf4j
+public class MallShopAnalysisServiceImpl extends ServiceImpl<MallDao, ShopRankEntity> implements MallShopAnalysisService {
+
+    @Resource
+    MallDao mallDao;
+    @Autowired
+    TimeUtils timeUtils;
+    @Autowired
+    HttpUtil httpUtil;
+    @Value("${common.request.url}")
+    String urlHeader;
+    @Autowired
+    OverviewRingSimilarUtils overview;
+    @Autowired
+    MathUtils mathUtils;
+    /**
+     * 店铺排行榜
+     *     * 销售额  saleAmount
+     *      * 日均销售坪效  saleEffect
+     *      * 客单价  perCustomerPrice
+     *      * 交易笔数 tradeBills
+     */
+    @Override
+    public  PageUtils rankingList(String dataType, ParameterVo parameterVo) {
+        Page<ShopRankEntity> page = new Page<>(parameterVo.getPage(),parameterVo.getPageSize());
+
+        if (Constants.SALEAMOUNT.equals(dataType)){
+            List<ShopRankEntity> list = this.baseMapper.querySaleAmountRank(page,parameterVo);
+            page = page.setRecords(list);
+            return new PageUtils(page);
+        }
+        if (Constants.SALEEFFECT.equals(dataType)){
+            List<ShopRankEntity> list = this.baseMapper.querySaleEffectRank(page,parameterVo);
+            page = page.setRecords(list);
+            return new PageUtils(page);
+        }
+        if (Constants.PERCUSTOMERPRICE.equals(dataType)){
+            List<ShopRankEntity> list = this.baseMapper.queryPerCustomerPriceRank(page,parameterVo);
+            page = page.setRecords(list);
+            return new PageUtils(page);
+        }
+        if (Constants.TRADEBILLS.equals(dataType)){
+            List<ShopRankEntity> list = this.baseMapper.queryTradeBillsRank(page,parameterVo);
+            page = page.setRecords(list);
+            return new PageUtils(page);
+        }
+        return new PageUtils(page);
+    }
+
+    @Override
+    public MallSaleCompareEntity shopCompare(ParameterVo parameterVo) {
+        MallSaleCompareEntity mallSaleCompareEntity = new MallSaleCompareEntity();
+
+        if (Constants.D.equals(parameterVo.getDateType())){
+            //计算昨天
+            String timeDate = timeUtils.getDay(parameterVo.getStartTime(),-1);
+            parameterVo.setStartTime(timeDate);
+
+            MallSaleEntity todayData = mallDao.queryShopNatureData(parameterVo) ;
+
+            if (todayData == null){
+                return mallSaleCompareEntity;
+            }
+
+            overview.saleSaveData(mallSaleCompareEntity,todayData);
+
+            String yesterday = timeUtils.getDay(parameterVo.getStartTime(), -1);
+            parameterVo.setStartTime(yesterday);
+            MallSaleEntity yesterdayData = mallDao.queryShopNatureData(parameterVo) ;
+
+            if (yesterdayData == null){
+                return mallSaleCompareEntity;
+            }
+
+            overview.saleRing(mallSaleCompareEntity,todayData,yesterdayData);
+            return mallSaleCompareEntity;
+        }
+
+        if (Constants.DM.equals(parameterVo.getDateType())){
+            if (timeUtils.isFistDay(parameterVo.getStartTime())){
+                //第一天
+                //初始月应该重置为上月1号
+                parameterVo.setDateType(Constants.M);
+                //接下来按自然月计算
+            }else {
+                //非第一天，按天统计
+                String currentTime = parameterVo.getStartTime();
+                parameterVo.setDateType(Constants.D);
+                parameterVo.setStartTime(timeUtils.getfirstDayOfMonth(currentTime));
+                parameterVo.setEndTime(currentTime); // 本月第一天 - 本月当天
+                MallSaleEntity monthData = mallDao.queryShopUncompleteMonth(parameterVo);
+
+                if (monthData == null){
+                    return mallSaleCompareEntity;
+                }
+                overview.saleSaveData(mallSaleCompareEntity,monthData);
+
+
+                String lastMonth = timeUtils.getLastMonth(currentTime, -1);
+                parameterVo.setStartTime(timeUtils.getfirstDayOfMonth(lastMonth));// 上月第一天  上月当天
+                parameterVo.setEndTime(lastMonth);
+                MallSaleEntity lastMonthData = mallDao.queryShopUncompleteMonth(parameterVo);
+
+                if (lastMonthData == null){
+                    return mallSaleCompareEntity;
+                }
+                //环比
+                overview.saleRing(mallSaleCompareEntity,monthData,lastMonthData);
+
+                String monthOfLastYear = timeUtils.getLastYear(currentTime,-1);
+                parameterVo.setStartTime(timeUtils.getfirstDayOfMonth(monthOfLastYear));
+                parameterVo.setEndTime(monthOfLastYear);
+                MallSaleEntity monthOfLastYearData = mallDao.queryShopUncompleteMonth(parameterVo);
+
+                if (monthOfLastYearData == null){
+                    return mallSaleCompareEntity;
+                }
+                // 同比
+                overview.saleSimilar(mallSaleCompareEntity,monthData,monthOfLastYearData);
+                return mallSaleCompareEntity;
+            }
+        }
+
+        //自然月 M  环比同比
+        if (Constants.M.equals(parameterVo.getDateType())){
+            //前端给当前时间，计算上月一号
+            parameterVo.setStartTime(timeUtils.getLastMonth(parameterVo.getStartTime(),-1));
+            MallSaleEntity monthData = mallDao.queryShopNatureData(parameterVo);
+
+            if (monthData == null){
+                return mallSaleCompareEntity;
+            }
+            overview.saleSaveData(mallSaleCompareEntity,monthData);
+
+            String lastMonth = timeUtils.getLastMonth(parameterVo.getStartTime(), -1);
+            parameterVo.setStartTime(lastMonth);
+            MallSaleEntity lastMonthData = mallDao.queryShopNatureData(parameterVo);
+
+            if (lastMonthData == null){
+                return mallSaleCompareEntity;
+            }
+            //环比
+            overview.saleRing(mallSaleCompareEntity,monthData,lastMonthData);
+
+            String monthOfLastYear = timeUtils.getMonthOfLastYear(parameterVo.getStartTime());
+            parameterVo.setStartTime(monthOfLastYear);
+            MallSaleEntity monthOfLastYearData = mallDao.queryShopNatureData(parameterVo);
+
+            if (monthOfLastYearData == null){
+                return mallSaleCompareEntity;
+            }
+            // 同比
+            overview.saleSimilar(mallSaleCompareEntity,monthData,monthOfLastYearData);
+            return mallSaleCompareEntity;
+        }
+
+        //年 计算同比
+        if (Constants.Y.equals(parameterVo.getDateType())){
+            MallSaleEntity yearData = mallDao.queryShopNatureData(parameterVo);
+
+            if (yearData == null){
+                return mallSaleCompareEntity;
+            }
+            overview.saleSaveData(mallSaleCompareEntity,yearData);
+
+            String lastYear = timeUtils.getLastYear(parameterVo.getStartTime(),-1);
+            parameterVo.setStartTime(lastYear);
+            MallSaleEntity lastYearData = mallDao.queryShopNatureData(parameterVo);
+
+            if (lastYearData == null){
+                return mallSaleCompareEntity;
+            }
+            // 同比
+            overview.saleSimilar(mallSaleCompareEntity,yearData,lastYearData);
+            return mallSaleCompareEntity;
+        }
+        return mallSaleCompareEntity;
+    }
+
+    @Override
+    public List<TrendEntity> trend(String dataType, ParameterVo parameterVo) {
+        RequestEntity requestEntity = new RequestEntity();
+        requestEntity.setGroupId(parameterVo.getGroupId());
+        requestEntity.setMarketId(parameterVo.getMarketId());
+        requestEntity.setMallId(parameterVo.getMallId());
+        requestEntity.setShopId(parameterVo.getShopId());
+        requestEntity.setDateType(parameterVo.getDateType());
+        requestEntity.setStartTime(parameterVo.getStartTime());
+        requestEntity.setEndTime(parameterVo.getEndTime());
+
+        log.info("requestEntity ==>> {}", JSON.toJSONString(requestEntity));
+
+        if (Constants.SALEAMOUNT.equals(dataType)){
+            String URL = urlHeader+"99";
+            log.info("URL ==>> {}",URL);
+            return httpUtil.httpUtilPlus(URL, requestEntity);
+        }
+        if (Constants.SALEEFFECT.equals(dataType)){
+            String URL = urlHeader+"100";
+            log.info("URL ==>> {}",URL);
+            return httpUtil.httpUtilPlus(URL, requestEntity);
+        }
+        if (Constants.PERCUSTOMERPRICE.equals(dataType)){
+            String URL = urlHeader+"101";
+            log.info("URL ==>> {}",URL);
+            return httpUtil.httpUtilPlus(URL, requestEntity);
+        }
+        if (Constants.TRADEBILLS.equals(dataType)){
+            String URL = urlHeader+"102";
+            log.info("URL ==>> {}",URL);
+            return httpUtil.httpUtilPlus(URL, requestEntity);
+        }
+
+        return new ArrayList<>();
+    }
+
+    @Override
+    public R bostonShopList(ParameterVo parameterVo) {
+        List<ShopEntity> list = mallDao.bostonShopList(parameterVo);
+        long[] saleAmountData = new long[list.size()];
+        long[] saleEffectData = new long[list.size()];
+        for (int i=0;i<list.size();i++){
+            saleAmountData[i] = list.get(i).getSaleAmount();
+            saleEffectData[i] = list.get(i).getSaleEffect();
+        }
+        double saleAmountMedian = mathUtils.getMedian(saleAmountData);
+        double saleEffectMedian = mathUtils.getMedian(saleEffectData);
+        return R.ok().put("list",list).put("saleAmountMedian",saleAmountMedian).put("saleEffectMedian",saleEffectMedian);
+    }
+
+
+    @Override
+    public MallSaleEntity shopData(ParameterVo parameterVo) {
+        return mallDao.queryShopNatureData(parameterVo);
+    }
+
+    @Override
+    public PageUtils shopListWithSort(ParameterVo parameterVo) {
+        Page<ShopListEntity> page = new Page<>(parameterVo.getPage(),parameterVo.getPageSize());
+        List<ShopListEntity> list = mallDao.shopListWithSort(page,parameterVo);
+        log.info("原来的list ==>> {}",JSON.toJSONString(list));
+        page = page.setRecords(list);
+        return new PageUtils(page);
+    }
+}

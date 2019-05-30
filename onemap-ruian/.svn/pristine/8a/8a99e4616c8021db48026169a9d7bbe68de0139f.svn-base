@@ -1,0 +1,138 @@
+package com.rtmap.modules.app.service.impl;
+
+import com.alibaba.fastjson.JSON;
+import com.rtmap.modules.app.dao.MarketDao;
+import com.rtmap.modules.app.entity.*;
+import com.rtmap.modules.app.entity.vo.MarketVo;
+import com.rtmap.modules.app.service.MarketService;
+import com.rtmap.modules.app.utils.HttpUtil;
+import com.rtmap.modules.app.utils.TimeUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
+import java.util.List;
+
+@Service
+@Slf4j
+public class MarketServiceImpl implements MarketService {
+
+    @Autowired
+    TimeUtils timeUtils;
+    @Value("${common.request.url}")
+    String urlHeader;
+    @Autowired
+    HttpUtil httpUtil;
+    @Resource
+    MarketDao marketDao;
+
+    @Override
+    public List<SaleAndTradeEntity> saleAndTrade(MarketVo marketVo) {
+
+        String startTime = timeUtils.getDay(marketVo.getStartTime(), marketVo.getOffsetTime());
+        RequestEntity requestEntity = new RequestEntity();
+        requestEntity.setDateType(marketVo.getDateType());
+        requestEntity.setStartTime(startTime);
+        requestEntity.setEndTime(marketVo.getStartTime());
+        requestEntity.setMarketId(marketVo.getMarketId());
+        log.info("requestJson ==>> {}", JSON.toJSONString(requestEntity));
+
+        String URL = urlHeader + "20";
+        log.info("URL ==>> {}",URL);
+
+        return httpUtil.httpUtilPlus(URL, requestEntity);
+    }
+
+    @Override
+    public List<CarAndCustomerEntity> carAndCustomer(MarketVo marketVo) {
+        String startTime = timeUtils.getDay(marketVo.getStartTime(), marketVo.getOffsetTime());
+        RequestEntity requestEntity = new RequestEntity();
+        requestEntity.setDateType(marketVo.getDateType());
+        requestEntity.setStartTime(startTime);
+        requestEntity.setEndTime(marketVo.getStartTime());
+        requestEntity.setMarketId(marketVo.getMarketId());
+        log.info("requestJson ==>> {}", JSON.toJSONString(requestEntity));
+
+        String URL = urlHeader + "21";
+        log.info("URL ==>> {}",URL);
+
+        return httpUtil.httpUtilPlus(URL, requestEntity);
+    }
+
+    @Override
+    public List<MallYearAchievedEntity> AllYearAchieved(MarketVo marketVo) {
+        String lastMonth = timeUtils.getLastMonth(marketVo.getStartTime(), marketVo.getOffsetTime());
+
+        RequestEntity requestEntity = new RequestEntity();
+        requestEntity.setDateType(marketVo.getDateType());
+        requestEntity.setStartTime(lastMonth);
+        requestEntity.setMarketId(marketVo.getMarketId());
+
+        log.info("requestJson ==>> {}",JSON.toJSONString(requestEntity));
+
+        String URL = urlHeader + "22";
+        log.info("URL ==>> {}",URL);
+
+        return httpUtil.httpUtilPlus(URL, requestEntity);
+    }
+
+    @Override
+    public List<MallLastMonthEntity> lastMonthSale(MarketVo marketVo) {
+
+        String lastMonth = timeUtils.getLastMonth(marketVo.getStartTime(), marketVo.getOffsetTime());
+
+        RequestEntity requestEntity = new RequestEntity();
+        requestEntity.setDateType(marketVo.getDateType());
+        requestEntity.setStartTime(lastMonth);
+        requestEntity.setMarketId(marketVo.getMarketId());
+
+        log.info("requestJson ==>> {}",JSON.toJSONString(requestEntity));
+
+        String URL = urlHeader + "23";
+        log.info("URL ==>> {}",URL);
+
+        return httpUtil.httpUtilPlus(URL, requestEntity);
+    }
+
+    @Override
+    public List<MallCustomerCarPriceEntity> customerAndCarAndPrice(MarketVo marketVo) {
+
+        String lastMonth = timeUtils.getLastMonth(marketVo.getStartTime(), marketVo.getOffsetTime());
+
+        RequestEntity requestEntity = new RequestEntity();
+        requestEntity.setDateType(marketVo.getDateType());
+        requestEntity.setStartTime(lastMonth);
+        requestEntity.setMarketId(marketVo.getMarketId());
+
+        log.info("requestJson ==>> {}",JSON.toJSONString(requestEntity));
+        //获取项目车流
+        String URL = urlHeader + "24";
+        log.info("URL ==>> {}",URL);
+
+        return httpUtil.httpUtilPlus(URL, requestEntity);
+    }
+
+    @Override
+    public List<MallMemberEntity> memberCountAndIncrease(MarketVo marketVo) {
+
+        RequestEntity requestEntity = new RequestEntity();
+        requestEntity.setDateType(marketVo.getDateType());
+        requestEntity.setStartTime(marketVo.getStartTime());
+        requestEntity.setMarketId(marketVo.getMarketId());
+
+        log.info("requestJson ==>> {}",JSON.toJSONString(requestEntity));
+
+        String URL = urlHeader + "25";
+        log.info("URL ==>> {}",URL);
+
+        return httpUtil.httpUtilPlus(URL, requestEntity);
+    }
+
+    @Override
+    public List<MallEntity> queryAllMallOfMarket(MarketVo marketVo) {
+        return marketDao.queryAllMallOfMarket(marketVo);
+    }
+
+}

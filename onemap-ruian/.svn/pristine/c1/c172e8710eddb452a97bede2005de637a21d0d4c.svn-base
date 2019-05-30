@@ -1,0 +1,153 @@
+package com.rtmap.modules.app.controller;
+
+import com.alibaba.fastjson.JSON;
+import com.rtmap.common.utils.R;
+import com.rtmap.modules.app.entity.*;
+import com.rtmap.modules.app.entity.vo.GroupVo;
+import com.rtmap.modules.app.service.GroupService;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+/**
+ * APP集团项目驾驶舱
+ *
+ *
+ */
+@RestController
+@Slf4j
+@RequestMapping("/group")
+@Api("APP集团项目驾驶舱接口")
+public class AppGroupController {
+
+    @Autowired
+    GroupService groupService;
+    /**
+     * 今日快报
+     */
+    @GetMapping("/todayNews")
+    @ApiOperation("集团今日快报")
+    public R todayNews(){
+        // todo 从 redis 获取实时数据
+        return R.ok();
+    }
+
+
+    /**
+     * 最近30天销售与交易
+     */
+    @GetMapping("/saleAndTrade")
+    @ApiOperation("集团最近30天销售与交易数据")
+    public R saleAndTrade(GroupVo groupVo){
+        log.info("groupVoJson ==>> {}", JSON.toJSONString(groupVo));
+        List<SaleAndTradeEntity> list = groupService.saleAndTrade(groupVo);
+        return R.ok().put("list",list);
+    }
+
+    /**
+     * 最近30天车流与客流
+     */
+    @GetMapping("/carAndCustomer")
+    @ApiOperation("集团最近30天车流与客流数据")
+    public R carAndCustomer(GroupVo groupVo){
+        log.info("groupVoJson ==>> {}", JSON.toJSONString(groupVo));
+        List<CarAndCustomerEntity> list = groupService.carAndCustomer(groupVo);
+        return R.ok().put("list",list);
+
+    }
+
+    /**
+     * 上月项目销售
+     */
+    @GetMapping("/market/lastMonthSale")
+    @ApiOperation("上月项目销售")
+    public R lastMonthSale(GroupVo groupVo){
+        log.info("groupVoJson ==>> {}", JSON.toJSONString(groupVo));
+        List<MarketLastMonthEntity> list = groupService.lastMonthSale(groupVo);
+        return R.ok().put("list",list);
+
+    }
+
+    /**
+     * 上月项目客流、车流、客单价
+     */
+    @GetMapping("/market/customerAndCarAndPrice")
+    @ApiOperation("上月项目客流、车流、客单价")
+    public R customerAndCarAndPrice(GroupVo groupVo){
+        log.info("groupVoJson ==>> {}", JSON.toJSONString(groupVo));
+        List<GroupCustomerCarPriceEntity> list =  groupService.customerAndCarAndPrice(groupVo);
+        return R.ok().put("list",list);
+    }
+
+    /**
+     * 当前项目会员
+     */
+    @GetMapping("/market/memberCountAndIncrease")
+    @ApiOperation("当前项目会员与新增会员")
+    public R memberCountAndIncrease(GroupVo groupVo){
+        log.info("groupVoJson ==>> {}", JSON.toJSONString(groupVo));
+        List<GroupMemberEntity> list = groupService.memberCountAndIncrease(groupVo);
+        return R.ok().put("list",list);
+    }
+
+    /**
+     * 项目年度销售额
+     */
+    @GetMapping("/market/allYearSale")
+    @ApiOperation("项目年度销售额")
+    public R AllYearSale(GroupVo groupVo){
+        log.info("groupVoJson ==>> {}", JSON.toJSONString(groupVo));
+        List<MarketYearSaleEntity> list =  groupService.AllYearSale(groupVo);
+        return R.ok().put("list",list);
+
+    }
+
+    /**
+     * MALL、街区年度销售达成
+     *
+     * 直接走统一查询的大接口
+     */
+    @GetMapping("/market/allYearAchieved")
+    @ApiOperation("MALL、街区年度销售达成")
+    public R AllYearAchieved(GroupVo groupVo){
+        log.info("groupVoJson ==>> {}", JSON.toJSONString(groupVo));
+        List<MallYearAchievedEntity> list =  groupService.AllYearAchieved(groupVo);
+        return R.ok().put("list",list);
+    }
+
+    /**
+     * 获取项目列表以及项目底下mall数量
+     */
+    @GetMapping("/market/propertyList")
+    @ApiOperation("获取项目列表以及项目底下mall数量")
+    public R propertyList(){
+        return R.ok();
+    }
+
+    /**
+     * 获取集团年度快报
+     * 集团年度销售额、年度客流人次、车流、 会员人数
+     * 同比、         同比、        同比、消费额占比
+     * 集团达成率
+     */
+    @GetMapping("/market/groupYearNews")
+    @ApiOperation("获取项目列表以及项目底下mall数量")
+    public R groupYearNews(String nowTime){
+
+        // todo 从 redis 获取实时数据
+
+        return R.ok();
+    }
+
+    /**
+     * 根据项目获取项目销售额、交易笔数
+     */
+
+
+}

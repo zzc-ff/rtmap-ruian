@@ -1,0 +1,36 @@
+package com.rtmap.modules.app.entity;
+
+import lombok.Data;
+
+@Data
+public class GroupRealTimeEntity {
+
+    /**
+     * 销售额
+     */
+    private long saleAmount;
+
+    /**
+     * 交易笔数
+     */
+    private long tradBills;
+
+    /**
+     * 客流量、
+     */
+    private long customerNum;
+
+    /**
+     * 车流量
+     *
+     */
+    private long carNum;
+    /**
+     * 交易会员数
+     */
+    private long memberNum;
+    /**
+     * 会员消费额占比
+     */
+    private double memSaleRatio;
+}

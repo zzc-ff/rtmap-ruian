@@ -1,0 +1,43 @@
+package com.rtmap.modules.app.utils;
+
+import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
+
+@Component
+public class MathUtils {
+
+    /**
+     * 求long 数组中位数
+     * @param data
+     * @return
+     */
+    public double getMedian(long[] data){
+        if (data.length <= 0){
+            return 0;
+        }
+        Arrays.sort(data);
+        if (data.length % 2 == 0){
+            int i = (data.length -2) / 2;
+            int j = data.length / 2;
+            return (data[i]+data[j]) * 1.0 /2;
+        }else {
+            int i = (data.length - 1) / 2;
+            return  data[i] * 1.0;
+        }
+    }
+
+    /**
+     * 求平均数
+     */
+    public double getaverage(long[] data){
+        if (data.length <= 0){
+            return 0;
+        }
+        long dataCount = 0;
+        for (int i = 0;i<data.length;i++){
+            dataCount +=data[i];
+        }
+        return dataCount * 1.0 / data.length;
+    }
+}
